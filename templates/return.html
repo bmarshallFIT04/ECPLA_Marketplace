@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}
+Return Product
+{% endblock %}
+
+{% block content %}
+
+<h1>Return Product</h1>
+
+<section class="return-card">
+
+    <h2>Selected Product</h2>
+
+    <p>Product: Sample Product</p>
+    <p>Order Number: #1001</p>
+    <p>Purchase Date: October 19, 2026</p>
+    <p>Price: $19.99</p>
+
+</section>
+
+
+<form method="POST">
+
+    <div>
+        <label for="reason">Reason for Return</label>
+
+        <textarea
+            id="reason"
+            name="reason"
+            placeholder="Explain why you are returning this product..."
+            required
+        ></textarea>
+    </div>
+
+
+    <div>
+        <label for="resolution">Requested Resolution</label>
+
+        <select id="resolution" name="resolution" required>
+            <option value="">Select an option</option>
+            <option value="refund">Refund</option>
+            <option value="replacement">Replacement</option>
+        </select>
+    </div>
+
+
+    <div>
+        <label for="shipping">Return Shipping Method</label>
+
+        <select id="shipping" name="shipping" required>
+            <option value="">Select shipping method</option>
+            <option value="ups">UPS</option>
+            <option value="fedex">FedEx</option>
+            <option value="usps">USPS</option>
+        </select>
+    </div>
+
+
+    <button type="submit">
+        Submit Return Request
+    </button>
+
+</form>
+
+{% endblock %}

@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect
 
 app = Flask(__name__)
 
@@ -48,17 +48,30 @@ def account():
     return render_template("account.html")
 
 
-@app.route("/seller")
-def seller():
-    return render_template("seller.html")
-
 @app.route("/messages")
 def messages():
     return render_template("messages.html")
 
+
 @app.route("/archive")
 def archive():
     return render_template("archive.html")
+
+
+@app.route("/return", methods=["GET", "POST"])
+def return_product():
+
+    if request.method == "POST":
+        reason = request.form["reason"]
+        resolution = request.form["resolution"]
+        shipping = request.form["shipping"]
+
+        # Database logic will be added later
+
+        return redirect("/orders")
+
+    return render_template("return.html")
+
 
 if __name__ == "__main__":
     app.run(debug=True)
