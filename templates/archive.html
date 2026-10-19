@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}
+Product Archive
+{% endblock %}
+
+{% block content %}
+
+<h1>Product Archive</h1>
+
+<p>
+    View all of your products, including products that
+    have been archived.
+</p>
+
+<div class="product-grid">
+
+    <div class="product-card">
+
+        <div class="product-card-content">
+
+            <h2>Sample Product</h2>
+
+            <p>Price: $19.99</p>
+            <p>Stock: 10</p>
+
+            <p>
+                Status:
+                <strong>Active</strong>
+            </p>
+
+            <button>Edit</button>
+            <button>Archive</button>
+
+        </div>
+
+    </div>
+
+
+    <div class="product-card archived-product">
+
+        <div class="product-card-content">
+
+            <h2>Old Handmade Mug</h2>
+
+            <p>Price: $24.99</p>
+            <p>Stock: 0</p>
+
+            <p>
+                Status:
+                <strong>Archived</strong>
+            </p>
+
+            <button>Restore Product</button>
+            <button>Delete</button>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

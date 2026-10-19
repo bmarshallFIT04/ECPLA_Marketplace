@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}
+Products
+{% endblock %}
+
+{% block content %}
+
+<h1>Products</h1>
+
+<form class="search-form" method="GET" action="/products">
+
+    <div class="search-row">
+
+        <input
+            type="text"
+            name="search"
+            placeholder="Search products..."
+        >
+
+        <button type="submit">
+            Search
+        </button>
+
+    </div>
+
+
+    <div class="filter-row">
+
+        <select name="category">
+            <option value="">All Categories</option>
+            <option value="art">Art</option>
+            <option value="jewelry">Jewelry</option>
+            <option value="clothing">Clothing</option>
+            <option value="home">Home Decor</option>
+            <option value="pottery">Pottery</option>
+        </select>
+
+
+        <select name="price">
+            <option value="">Any Price</option>
+            <option value="under25">Under $25</option>
+            <option value="25-50">$25 - $50</option>
+            <option value="50-100">$50 - $100</option>
+            <option value="100plus">$100+</option>
+        </select>
+
+
+        <select name="rating">
+            <option value="">Any Rating</option>
+            <option value="4">4 Stars & Up</option>
+            <option value="3">3 Stars & Up</option>
+            <option value="2">2 Stars & Up</option>
+        </select>
+
+
+        <select name="date">
+            <option value="">Any Date</option>
+            <option value="month">Past Month</option>
+            <option value="3months">Past 3 Months</option>
+            <option value="6months">Past 6 Months</option>
+        </select>
+
+        <button type="submit" class="filter-button">
+            Apply Filters
+        </button>
+
+    </div>
+
+</form>
+
+
+<div class="product-grid">
+
+    <div class="product-card">
+
+        <div class="product-card-content">
+
+            <h2>Sample Product</h2>
+
+            <p>Handmade product description.</p>
+
+            <p class="product-price">$19.99</p>
+
+            <a href="/product">View Product</a>
+
+        </div>
+
+    </div>
+
+    <div class="product-card">
+
+        <div class="product-card-content">
+
+            <h2>Another Product</h2>
+
+            <p>Another example product.</p>
+
+            <p class="product-price">$29.99</p>
+
+            <a href="/product">View Product</a>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

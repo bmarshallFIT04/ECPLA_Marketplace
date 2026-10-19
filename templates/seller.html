@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}
+Seller Dashboard
+{% endblock %}
+
+{% block content %}
+
+<h1>Seller Dashboard</h1>
+
+<section>
+
+    <h2>My Products</h2>
+
+    <a href="#">
+        <button>
+            Add Product
+        </button>
+    </a>
+
+    <div class="product-card">
+
+        <h3>Sample Product</h3>
+
+        <p>
+            Price: $19.99
+        </p>
+
+        <p>
+            Stock: 10
+        </p>
+
+        <p>
+            Status: On Sale
+        </p>
+
+        <button>
+            Edit
+        </button>
+
+        <button>
+            Toggle Sale Status
+        </button>
+
+        <button>
+            Archive
+        </button>
+
+        <button>
+            Delete
+        </button>
+
+    </div>
+
+</section>
+
+<section>
+
+    <h2>Seller Analytics</h2>
+
+    <p>
+        Revenue: $0.00
+    </p>
+
+    <p>
+        Products Sold: 0
+    </p>
+
+    <p>
+        Products Returned: 0
+    </p>
+
+</section>
+
+{% endblock %}

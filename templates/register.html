@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}
+Create Account
+{% endblock %}
+
+{% block content %}
+
+<h1>Create an Account</h1>
+
+<form method="POST">
+
+    <div>
+        <label for="username">Username</label>
+        <input
+            type="text"
+            id="username"
+            name="username"
+            required
+        >
+    </div>
+
+    <div>
+        <label for="password">Password</label>
+        <input
+            type="password"
+            id="password"
+            name="password"
+            required
+        >
+    </div>
+
+    <div>
+        <label for="role">Account Type</label>
+
+        <select id="role" name="role" required>
+            <option value="buyer">Buyer</option>
+            <option value="seller">Seller</option>
+        </select>
+    </div>
+
+    <button type="submit">
+        Create Account
+    </button>
+
+</form>
+
+<p>
+    Already have an account?
+    <a href="/login">Log in</a>
+</p>
+
+{% endblock %}

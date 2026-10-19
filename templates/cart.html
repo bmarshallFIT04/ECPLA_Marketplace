@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}
+Shopping Cart
+{% endblock %}
+
+{% block content %}
+
+<h1>Shopping Cart</h1>
+
+<div class="cart-item">
+
+    <h2>Sample Product</h2>
+
+    <p>
+        Price: $19.99
+    </p>
+
+    <label for="quantity">
+        Quantity
+    </label>
+
+    <input
+        type="number"
+        id="quantity"
+        value="1"
+        min="0"
+    >
+
+    <button>
+        Update Quantity
+    </button>
+
+    <button>
+        Remove
+    </button>
+
+</div>
+
+<hr>
+
+<h2>Cart Total</h2>
+
+<p>
+    Subtotal: $19.99
+</p>
+
+<a href="/checkout">
+    <button>
+        Proceed to Checkout
+    </button>
+</a>
+
+{% endblock %}

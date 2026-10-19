@@ -1,0 +1,454 @@
+/* ---------- Global ---------- */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Trebuchet MS", Arial, sans-serif;
+    background-color: #f6f1e8;
+    color: #2f2a25;
+}
+
+main {
+    max-width: 1200px;
+    margin: auto;
+    padding: 40px 25px;
+}
+
+h1,
+h2,
+h3 {
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+
+/* ---------- Navigation ---------- */
+
+nav {
+    background-color: #29463c;
+    color: white;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 18px 45px;
+
+    border-bottom: 5px solid #c58b57;
+}
+
+.nav-left,
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+nav a {
+    color: white;
+    transition: 0.2s;
+}
+
+nav a:hover {
+    color: #f2c894;
+}
+
+.logo {
+    font-family: Georgia, serif;
+    font-size: 23px;
+    font-weight: bold;
+    margin-right: 15px;
+}
+
+
+/* ---------- Hero ---------- */
+
+.hero {
+    position: relative;
+
+    background:
+        linear-gradient(
+            rgba(41, 70, 60, 0.88),
+            rgba(41, 70, 60, 0.88)
+        );
+
+    color: white;
+
+    padding: 90px 60px;
+
+    border-radius: 0 0 35px 35px;
+
+    margin-top: -40px;
+    margin-left: -25px;
+    margin-right: -25px;
+    margin-bottom: 55px;
+
+    text-align: left;
+}
+
+.hero h1 {
+    color: white;
+    font-size: 52px;
+    margin-bottom: 15px;
+    max-width: 700px;
+}
+
+.hero p {
+    font-size: 20px;
+    max-width: 600px;
+    line-height: 1.6;
+    color: #f0e7d8;
+}
+
+.hero button {
+    margin-top: 20px;
+}
+
+
+/* ---------- Buttons ---------- */
+
+button {
+    background-color: #c06c48;
+    color: white;
+
+    border: none;
+    border-radius: 25px;
+
+    padding: 12px 22px;
+
+    font-size: 15px;
+    font-weight: bold;
+
+    cursor: pointer;
+
+    margin-top: 12px;
+    margin-right: 8px;
+
+    transition: 0.2s;
+}
+
+button:hover {
+    background-color: #a85739;
+    transform: translateY(-2px);
+}
+
+
+/* ---------- Section Headings ---------- */
+
+section h2 {
+    font-size: 30px;
+    margin-bottom: 20px;
+    color: #29463c;
+}
+
+
+/* ---------- Products Grid ---------- */
+
+.product-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fill, minmax(230px, 1fr));
+
+    gap: 28px;
+}
+
+.search-form {
+    max-width: none;
+    padding: 20px;
+    margin-bottom: 35px;
+}
+
+.search-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.search-row input {
+    flex: 1;
+}
+
+.search-row button {
+    margin-top: 0;
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.filter-row select {
+    width: auto;
+    min-width: 150px;
+}
+
+.filter-button {
+    margin-top: 0;
+}
+
+/* ---------- Product Cards ---------- */
+
+.product-card {
+    background-color: #fffdf9;
+
+    border-radius: 18px;
+
+    overflow: hidden;
+
+    padding: 0;
+
+    box-shadow:
+        0 5px 18px rgba(77, 61, 45, 0.12);
+
+    transition:
+        transform 0.25s,
+        box-shadow 0.25s;
+}
+
+.product-card:hover {
+    transform: translateY(-7px);
+
+    box-shadow:
+        0 10px 25px rgba(77, 61, 45, 0.2);
+}
+
+.product-card a {
+    display: inline-block;
+
+    margin-top: 8px;
+
+    color: #c06c48;
+    font-weight: bold;
+}
+
+.product-card a:hover {
+    color: #a85739;
+}
+
+.product-card img {
+    width: 100%;
+    height: 190px;
+    object-fit: cover;
+}
+
+.product-card-content {
+    padding: 18px;
+}
+
+.product-card h2,
+.product-card h3 {
+    margin-top: 0;
+    color: #29463c;
+}
+
+.product-price {
+    color: #c06c48;
+    font-size: 19px;
+    font-weight: bold;
+}
+
+.seller-name {
+    color: #7b6a58;
+    font-size: 14px;
+}
+
+.seller-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.seller-actions button {
+    margin-top: 0;
+}
+
+
+/* ---------- Forms ---------- */
+
+form {
+    background-color: #fffdf9;
+
+    padding: 30px;
+
+    border-radius: 18px;
+
+    max-width: 520px;
+
+    box-shadow:
+        0 5px 18px rgba(77, 61, 45, 0.12);
+
+    margin-top: 20px;
+}
+
+form div {
+    margin-bottom: 18px;
+}
+
+label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    font-weight: bold;
+
+    color: #4f4438;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+
+    padding: 12px;
+
+    border: 1px solid #d7c9b8;
+
+    border-radius: 10px;
+
+    background-color: #fffefa;
+
+    font-size: 15px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+
+    border-color: #c06c48;
+
+    box-shadow:
+        0 0 0 2px rgba(192, 108, 72, 0.15);
+}
+
+
+/* ---------- Account / Dashboard Sections ---------- */
+
+.account-card,
+.seller-section,
+.order-card,
+.cart-item,
+.message-area,
+.conversation-list {
+    background-color: #fffdf9;
+
+    padding: 25px;
+
+    margin-bottom: 25px;
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 4px 15px rgba(77, 61, 45, 0.1);
+}
+
+/* ---------- Archived Products ---------- */
+
+.archived-product {
+    opacity: 0.7;
+    border: 2px dashed #b89b7a;
+}
+
+/* ---------- Messaging ---------- */
+
+.messages-container {
+    display: grid;
+
+    grid-template-columns: 260px 1fr;
+
+    gap: 25px;
+}
+
+.conversation {
+    padding: 14px;
+
+    margin-bottom: 10px;
+
+    border-radius: 12px;
+
+    background-color: #eee4d5;
+
+    cursor: pointer;
+}
+
+.conversation:hover {
+    background-color: #dfccb1;
+}
+
+.message-history {
+    min-height: 320px;
+}
+
+.message {
+    max-width: 70%;
+
+    padding: 12px 16px;
+
+    margin-bottom: 12px;
+
+    border-radius: 18px;
+}
+
+.received {
+    background-color: #ece5dc;
+}
+
+.sent {
+    background-color: #cfe1d7;
+    margin-left: auto;
+}
+
+
+/* ---------- Footer ---------- */
+
+footer {
+    margin-top: 70px;
+
+    padding: 30px;
+
+    text-align: center;
+
+    background-color: #29463c;
+
+    color: #e8ddce;
+}
+
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 750px) {
+
+    nav {
+        flex-direction: column;
+        gap: 15px;
+        padding: 20px;
+    }
+
+    .nav-left,
+    .nav-right {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .hero {
+        padding: 60px 30px;
+    }
+
+    .hero h1 {
+        font-size: 38px;
+    }
+
+    .messages-container {
+        grid-template-columns: 1fr;
+    }
+}
