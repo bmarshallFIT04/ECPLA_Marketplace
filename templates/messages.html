@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}
+Messages
+{% endblock %}
+
+{% block content %}
+
+<h1>Messages</h1>
+
+<div class="messages-container">
+
+    <div class="conversation-list">
+
+        <h2>Conversations</h2>
+
+        <div class="conversation">
+            Sample Seller
+        </div>
+
+        <div class="conversation">
+            Another Seller
+        </div>
+
+    </div>
+
+
+    <div class="message-area">
+
+        <h2>Sample Seller</h2>
+
+        <div class="message-history">
+
+            <div class="message received">
+                Hello! How can I help you?
+            </div>
+
+            <div class="message sent">
+                Hi, I had a question about this product.
+            </div>
+
+        </div>
+
+
+        <form method="POST">
+
+            <label for="message">
+                Message
+            </label>
+
+            <textarea
+                id="message"
+                name="message"
+                placeholder="Type your message..."
+                required
+            ></textarea>
+
+            <button type="submit">
+                Send
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

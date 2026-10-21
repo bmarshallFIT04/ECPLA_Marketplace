@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}
+Product Details
+{% endblock %}
+
+{% block content %}
+
+<h1>Sample Product</h1>
+
+<div class="product-details">
+
+    <div>
+        <p>Product image will go here.</p>
+    </div>
+
+    <div>
+
+        <h2>$19.99</h2>
+
+        <p>
+            This is where the product description will appear.
+        </p>
+
+        <p>
+            Seller: Sample Seller
+        </p>
+
+        <p>
+            Stock: 10
+        </p>
+
+        <form method="POST">
+
+            <label for="quantity">
+                Quantity
+            </label>
+
+            <input
+                type="number"
+                id="quantity"
+                name="quantity"
+                value="1"
+                min="1"
+            >
+
+            <button type="submit">
+                Add to Cart
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<section>
+
+    <h2>Reviews</h2>
+
+    <p>
+        Product reviews will appear here.
+    </p>
+
+</section>
+
+{% endblock %}
