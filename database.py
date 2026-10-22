@@ -22,8 +22,26 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+
+    # Initializes Reviews database
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS reviews (
+            review_ID int PRIMARY KEY,
+            body varchar(1000) NOT NULL,
+            rating bit(4),
+            reviewerID int,
+            productID int
+        );  
+
+        ALTER TABLE reviews
+        ADD CHECK (rating <= 9)
+    ''')
+
     conn.commit()
     conn.close()
+
+    
+
 
 
 def add_product(seller_id, title, description, price, stock_quantity):
@@ -79,6 +97,7 @@ def list_products_by_seller(seller_id):
     products = cursor.fetchall()
     conn.close()
     return products
+
 
 
 # Command Line Interface (for standalone testing)
