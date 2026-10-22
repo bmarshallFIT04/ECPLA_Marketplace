@@ -1,11 +1,6 @@
-<<<<<<< HEAD
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 
 from database import init_db, add_product, remove_product, list_products_by_seller
-=======
-from flask import Flask, render_template, request, redirect
-
->>>>>>> f2fe77223489423b1b559561f8583a99f984bb25
 app = Flask(__name__)
 
 
@@ -79,7 +74,6 @@ def return_product():
     return render_template("return.html")
 
 
-<<<<<<< HEAD
 #Bryan Bermudez - Add product
 @app.route('/api/add-product', methods=['POST'])
 def handle_add_product():
@@ -109,15 +103,6 @@ def handle_add_product():
     return jsonify(result), status_code
 
 
-
-
-
-
-
 if __name__ == "__main__":
     init_db()
     app.run(debug=True)
-=======
-if __name__ == "__main__":
-    app.run(debug=True)
->>>>>>> f2fe77223489423b1b559561f8583a99f984bb25
