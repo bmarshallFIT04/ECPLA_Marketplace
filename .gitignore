@@ -1,0 +1,19 @@
+# Python Environments
+.env
+.envrc
+.venv
+env/
+venv/
+ENV/
+bin/
+lib/
+pyvenv.cfg
+
+# Python Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[codz]
+*$py.class
+
+# Flask
+instance/
+.webassets-cache
