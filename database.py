@@ -26,11 +26,11 @@ def init_db():
     # Initializes Reviews database
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS reviews (
-            review_ID int PRIMARY KEY,
+            review_id int PRIMARY KEY AUTOINCREMENT,
             body varchar(1000) NOT NULL,
-            rating bit(4),
-            reviewerID int,
-            productID int
+            rating bit(4) NOT NULL,
+            user_id int NOT NULL,
+            product_id int NOT NULL
         );  
 
         ALTER TABLE reviews
@@ -98,6 +98,15 @@ def list_products_by_seller(seller_id):
     conn.close()
     return products
 
+def add_review(body:str, rating:int, user_id:int, product_id:int):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO reviews (body, rating, user_id, product_id)
+        VALUES (?, ?, ?, ?)
+    ''', (body, rating, user_id, product_id))
+    conn.close()
+    return True
 
 
 # Command Line Interface (for standalone testing)
