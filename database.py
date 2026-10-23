@@ -75,6 +75,67 @@ def init_db():
 
 
 
+    # Initializes Reviews database
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS reviews (
+            review_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            body TEXT NOT NULL,
+            rating INTEGER NOT NULL CHECK (rating <= 9),
+            user_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL
+        )
+    ''')
+
+    # Initializes Product Tags database (one row per tag on a product)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS product_tags (
+            tag_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id INTEGER NOT NULL,
+            tag TEXT NOT NULL,
+            UNIQUE (product_id, tag)
+        )
+    ''')
+
+    # Initializes saved checkout information (one saved address and card per user)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS saved_shipping (
+            user_id INTEGER PRIMARY KEY,
+            full_name TEXT NOT NULL,
+            address TEXT NOT NULL
+        )
+    ''')
+
+    # The CVV is intentionally never stored; buyers re-enter it for each order
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS saved_payment (
+            user_id INTEGER PRIMARY KEY,
+            card_number TEXT NOT NULL,
+            expiration TEXT NOT NULL
+        )
+    ''')
+
+    # Initializes Shopping Cart table - bryan bermudez
+    cursor.execute('''
+            CREATE TABLE IF NOT EXISTS cart_items (
+                cart_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                product_id INTEGER NOT NULL,
+                quantity INTEGER NOT NULL DEFAULT 1,
+                UNIQUE(user_id, product_id)
+            )
+        ''')
+
+
+
+    # To-do: Initialize table 'accounts'
+        # name
+        # password
+        # id
+        # role
+            # fields for users
+            # fields for sellers
+        # To-do: complete fields
+
     conn.commit()
     conn.close()
 
@@ -102,7 +163,6 @@ def add_product(seller_id, title, description, price, stock_quantity, tags=None)
     conn.commit()
     conn.close()
     return {"success": True, "message": f"Product '{title}' added to the database!"}
-
 
 def remove_product(product_id):
     """Removes a product (and its tags) from the database by its ID."""
@@ -345,6 +405,17 @@ def get_seller_cart_count(seller_id):
 
 
 
+# To-do
+def add_account():
+    pass
+
+# To-do
+def remove_account():
+    pass
+
+# To-do
+def get_account_detail(field: str):
+    pass
 
 # Command Line Interface (for standalone testing)
 def main():
