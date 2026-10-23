@@ -11,11 +11,40 @@ def home():
 
 @app.route("/register")
 def register():
+    if request.method == "POST":
+        name = request.form["name"]
+        password = request.form["password"]
+        role = request.form["role"]
+
+        # To-do: Validate input for each field
+        # To-do: Hash password
+        # To-do: Insert account record into database
+        # To-do: Notify user of account creation success/failure:
+            # Success - Redirect user to login page, and prompt them to login
+            # Failure - State why account was not created. Possible failures:
+                # Invalid input (special characters, string too long or too short, etc.)
+                # Account with name already exists
+                # Server error
+
     return render_template("register.html")
 
 
 @app.route("/login")
 def login():
+    if request.method == "POST":
+        name = request.form["name"]
+        password = request.form["password"]
+
+        # To-do: Validate input for each field
+        # To-do: Hash password
+        # To-do: Find account record with matching name. Compare password hashes.
+        # To-do: Notify user of login success or failure:
+            # Success - Perform session management, and redirect to home page
+            # Failure - State why account was not created. Possible failures:
+                # Invalid input (special characters, string too long or too short, etc.)
+                # Account name does not exist
+                # Server error
+
     return render_template("login.html")
 
 
