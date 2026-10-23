@@ -23,20 +23,6 @@ def init_db():
         )
     ''')
 
-    # Initializes Reviews database
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS reviews (
-            review_id int PRIMARY KEY AUTOINCREMENT,
-            body varchar(1000) NOT NULL,
-            rating bit(4) NOT NULL,
-            user_id int NOT NULL,
-            product_id int NOT NULL
-        );  
-
-        ALTER TABLE reviews
-        ADD CHECK (rating <= 9)
-    ''')
-
     conn.commit()
     conn.close()
 
