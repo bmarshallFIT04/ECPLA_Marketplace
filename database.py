@@ -23,12 +23,17 @@ def init_db():
         )
     ''')
 
+    # To-do: Initialize table 'accounts'
+        # name
+        # password
+        # id
+        # role
+            # fields for users
+            # fields for sellers
+        # To-do: complete fields
+
     conn.commit()
     conn.close()
-
-    
-
-
 
 def add_product(seller_id, title, description, price, stock_quantity):
     """Adds a new product to the database with validation checks."""
@@ -47,7 +52,6 @@ def add_product(seller_id, title, description, price, stock_quantity):
     conn.commit()
     conn.close()
     return {"success": True, "message": f"Product '{title}' added to the database!"}
-
 
 def remove_product(product_id):
     """Removes a product from the database by its ID."""
@@ -94,6 +98,17 @@ def add_review(body:str, rating:int, user_id:int, product_id:int):
     conn.close()
     return True
 
+# To-do
+def add_account():
+    pass
+
+# To-do
+def remove_account():
+    pass
+
+# To-do
+def get_account_detail(field: str):
+    pass
 
 # Command Line Interface (for standalone testing)
 def main():
