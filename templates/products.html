@@ -72,37 +72,40 @@ Products
 
 <div class="product-grid">
 
+    <!-- Products from every seller, loaded from the database -->
+    {% for product in products %}
     <div class="product-card">
 
         <div class="product-card-content">
 
-            <h2>Sample Product</h2>
+            <h2>{{ product.title }}</h2>
 
-            <p>Handmade product description.</p>
+            {% if product.description %}
+            <p>{{ product.description }}</p>
+            {% endif %}
 
-            <p class="product-price">$19.99</p>
+            <p class="product-price">${{ "%.2f"|format(product.price) }}</p>
 
-            <a href="/product">View Product</a>
+            {% if product.stock == 0 %}
+            <p class="out-of-stock">Out of stock</p>
+            {% endif %}
 
-        </div>
+            {% if product.tags %}
+            <div class="tag-list">
+                {% for tag in product.tags %}
+                <span class="tag tag-static">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
 
-    </div>
-
-    <div class="product-card">
-
-        <div class="product-card-content">
-
-            <h2>Another Product</h2>
-
-            <p>Another example product.</p>
-
-            <p class="product-price">$29.99</p>
-
-            <a href="/product">View Product</a>
+            <a href="/product/{{ product.id }}">View Product</a>
 
         </div>
 
     </div>
+    {% else %}
+    <p>No products are available yet.</p>
+    {% endfor %}
 
 </div>
 

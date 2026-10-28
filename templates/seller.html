@@ -8,68 +8,217 @@ Seller Dashboard
 
 <h1>Seller Dashboard</h1>
 
-<section>
-
+<!-- ========================================================================= -->
+<!-- FEATURE: Seller Dashboard & Add Product Functionality                     -->
+<!-- ========================================================================= -->
+<section class="seller-section">
     <h2>My Products</h2>
 
-    <a href="#">
-        <button>
+    <div class="seller-actions">
+        <!-- Replaced anchor link with an interactive button to trigger the form popup -->
+        <button id="toggleFormBtn" class="btn" style="background-color: #b56536; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-bottom: 15px;">
             Add Product
         </button>
-    </a>
-
-    <div class="product-card">
-
-        <h3>Sample Product</h3>
-
-        <p>
-            Price: $19.99
-        </p>
-
-        <p>
-            Stock: 10
-        </p>
-
-        <p>
-            Status: On Sale
-        </p>
-
-        <button>
-            Edit
-        </button>
-
-        <button>
-            Toggle Sale Status
-        </button>
-
-        <button>
-            Archive
-        </button>
-
-        <button>
-            Delete
-        </button>
-
+        <a href="/archive"><button>View Product Archive</button></a>
     </div>
 
+    <!-- Hidden form container that pops up when the Add Product button is clicked -->
+    <div id="addProductContainer" style="display: none; background: #fdfdfd; padding: 20px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 20px;">
+        <h3>Add Product to Catalog</h3>
+        <form id="addProductForm">
+            <div style="margin-bottom: 10px;">
+                <label for="title">Product Title:</label><br>
+                <input type="text" id="title" name="title" required style="width: 100%; padding: 8px; box-sizing: border-box;">
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <label for="description">Description:</label><br>
+                <textarea id="description" name="description" style="width: 100%; padding: 8px; box-sizing: border-box;"></textarea>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <label for="price">Price ($):</label><br>
+                <!-- Enforces minimum price validation matching the database check -->
+                <input type="number" id="price" name="price" step="0.01" min="0.01" required style="width: 100%; padding: 8px; box-sizing: border-box;">
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <label for="stock_quantity">Stock Quantity:</label><br>
+                <!-- Enforces non-negative stock validation matching the database check -->
+                <input type="number" id="stock_quantity" name="stock_quantity" min="0" required style="width: 100%; padding: 8px; box-sizing: border-box;">
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <label for="tags">Tags (comma-separated):</label><br>
+                <input type="text" id="tags" name="tags" placeholder="e.g. ceramic, handmade, blue" style="width: 100%; padding: 8px; box-sizing: border-box;">
+            </div>
+
+            <button type="submit" style="background: #2d5a27; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer;">Save Product</button>
+        </form>
+        <div id="formMessage" style="margin-top: 10px; font-weight: bold;"></div>
+    </div>
+
+    <div class="product-grid">
+        {% for product in products %}
+        <div class="product-card">
+            <div class="product-card-content">
+                <h3>{{ product.title }}</h3>
+                <p>Price: ${{ "%.2f"|format(product.price) }}</p>
+                <p>Stock: {{ product.stock }}</p>
+                <p>Status: On Sale</p>
+
+                <!-- Product tags: click × to remove one, or edit the full list below -->
+                <div class="tag-list" data-product-id="{{ product.id }}">
+                    {% for tag in product.tags %}
+                    <span class="tag">
+                        {{ tag }}
+                        <button type="button" class="tag-remove" data-tag="{{ tag }}" aria-label="Remove tag {{ tag }}">&times;</button>
+                    </span>
+                    {% else %}
+                    <span class="no-tags">No tags yet</span>
+                    {% endfor %}
+                </div>
+
+                <form class="tag-form" data-product-id="{{ product.id }}">
+                    <label for="tags-{{ product.id }}">Edit Tags (comma-separated)</label>
+                    <input type="text" id="tags-{{ product.id }}" value="{{ product.tags|join(', ') }}">
+                    <button type="submit">Save Tags</button>
+                </form>
+
+                <button>Edit</button>
+                <button>Toggle Sale Status</button>
+                <button>Archive</button>
+                <button>Delete</button>
+            </div>
+        </div>
+        {% else %}
+        <p>You haven't added any products yet.</p>
+        {% endfor %}
+    </div>
 </section>
 
 <section>
-
     <h2>Seller Analytics</h2>
-
-    <p>
-        Revenue: $0.00
-    </p>
-
-    <p>
-        Products Sold: 0
-    </p>
-
-    <p>
-        Products Returned: 0
-    </p>
-
+    <p>Revenue: $0.00</p>
+    <p>Products Sold: 0</p>
+    <p>Products Returned: 0</p>
 </section>
+
+<!-- ========================================================================= -->
+<!-- JAVASCRIPT CONTROLLER FOR ADD PRODUCT POPUP & BACKEND SUBMISSION         -->
+<!-- ========================================================================= -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const toggleBtn = document.getElementById('toggleFormBtn');
+        const formContainer = document.getElementById('addProductContainer');
+
+        // Toggle form visibility when clicking the Add Product button
+        if (toggleBtn && formContainer) {
+            toggleBtn.addEventListener('click', () => {
+                if (formContainer.style.display === 'none' || formContainer.style.display === '') {
+                    formContainer.style.display = 'block';
+                    toggleBtn.textContent = 'Cancel';
+                    toggleBtn.style.backgroundColor = '#888';
+                } else {
+                    formContainer.style.display = 'none';
+                    toggleBtn.textContent = 'Add Product';
+                    toggleBtn.style.backgroundColor = '#b56536';
+                }
+            });
+        }
+
+        // Handle submitting product data asynchronously to the Flask backend route
+        const addProductForm = document.getElementById('addProductForm');
+        if (addProductForm) {
+            addProductForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                const formData = {
+                    title: document.getElementById('title').value,
+                    description: document.getElementById('description').value,
+                    price: parseFloat(document.getElementById('price').value),
+                    stock_quantity: parseInt(document.getElementById('stock_quantity').value),
+                    tags: document.getElementById('tags').value.split(',')
+                };
+
+                const messageDiv = document.getElementById('formMessage');
+                messageDiv.textContent = "Saving product...";
+                messageDiv.style.color = "blue";
+
+                try {
+                    const response = await fetch('/api/add-product', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        messageDiv.style.color = "green";
+                        messageDiv.textContent = result.message;
+                        addProductForm.reset();
+                        setTimeout(() => {
+                            location.reload(); // Refresh to display the newly saved product
+                        }, 1500);
+                    } else {
+                        messageDiv.style.color = "red";
+                        messageDiv.textContent = result.message || "Failed to add product.";
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    messageDiv.style.color = "red";
+                    messageDiv.textContent = "An error occurred while connecting to the server.";
+                }
+            });
+        }
+
+        // Send a product's full new tag list to the backend, then refresh to show it
+        async function saveTags(productId, tags) {
+            try {
+                const response = await fetch(`/api/products/${productId}/tags`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ tags: tags })
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    location.reload();
+                } else {
+                    alert(result.message || "Failed to update tags.");
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert("An error occurred while connecting to the server.");
+            }
+        }
+
+        // Edit tags: save whatever is typed in the product's tag box
+        document.querySelectorAll('.tag-form').forEach((form) => {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const tags = form.querySelector('input').value.split(',');
+                saveTags(form.dataset.productId, tags);
+            });
+        });
+
+        // Remove a tag: save the product's tags without the one that was clicked
+        document.querySelectorAll('.tag-remove').forEach((button) => {
+            button.addEventListener('click', () => {
+                const tagList = button.closest('.tag-list');
+                const remainingTags = Array.from(tagList.querySelectorAll('.tag-remove'))
+                    .filter((other) => other !== button)
+                    .map((other) => other.dataset.tag);
+                saveTags(tagList.dataset.productId, remainingTags);
+            });
+        });
+    });
+</script>
 
 {% endblock %}
