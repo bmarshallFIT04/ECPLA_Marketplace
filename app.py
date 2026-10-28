@@ -3,7 +3,8 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from database import (
     init_db, add_product, remove_product, get_product, list_products, list_products_by_seller,
     get_product_tags, set_product_tags,
-    save_shipping_address, get_shipping_address, save_payment_info, get_payment_info
+    save_shipping_address, get_shipping_address, save_payment_info, get_payment_info,
+    add_to_cart, get_cart_items, update_cart_quantity, remove_from_cart, get_seller_cart_count
 )
 app = Flask(__name__)
 
@@ -42,10 +43,6 @@ def product(product_id):
     return render_template("product.html", product=product)
 
 
-@app.route("/cart")
-def cart():
-    return render_template("cart.html")
-
 
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():
@@ -82,14 +79,17 @@ def account():
 
 @app.route("/seller")
 def seller():
-    # Fallback to default Seller ID 1 (SampleUser) since auth isn't fully built yet
     seller_id = session.get('user_id', 1)
 
     products = [
         {"id": p[0], "title": p[1], "price": p[3], "stock": p[4], "tags": get_product_tags(p[0])}
         for p in list_products_by_seller(seller_id)
     ]
-    return render_template("seller.html", products=products)
+
+    # Get total number of this seller's products sitting in active buyer carts
+    total_in_carts = get_seller_cart_count(seller_id)
+
+    return render_template("seller.html", products=products, total_in_carts=total_in_carts)
 
 
 @app.route("/messages")
@@ -160,6 +160,44 @@ def handle_set_tags(product_id):
     result = set_product_tags(product_id, seller_id, tags)
     status_code = 200 if result["success"] else 404
     return jsonify(result), status_code
+
+#Shopping cart - bryan bermudez
+@app.route("/cart/add/<int:product_id>", methods=["POST"])
+def cart_add(product_id):
+    user_id = session.get('user_id', 1)  # Fallback to user 1 for now
+    try:
+        qty = int(request.form.get('quantity', 1))
+    except ValueError:
+        qty = 1
+
+    add_to_cart(user_id, product_id, qty)
+    return redirect(url_for('cart'))
+
+
+@app.route("/cart/update/<int:cart_item_id>", methods=["POST"])
+def cart_update(cart_item_id):
+    try:
+        qty = int(request.form.get('quantity', 1))
+        update_cart_quantity(cart_item_id, qty)
+    except ValueError:
+        pass
+    return redirect(url_for('cart'))
+
+
+@app.route("/cart/remove/<int:cart_item_id>", methods=["POST"])
+def cart_remove(cart_item_id):
+    remove_from_cart(cart_item_id)
+    return redirect(url_for('cart'))
+
+
+@app.route("/cart")
+def cart():
+    user_id = session.get('user_id', 1)
+    items = get_cart_items(user_id)
+    total = sum(item['price'] * item['quantity'] for item in items)
+    return render_template("cart.html", cart_items=items, total=total)
+
+
 
 
 if __name__ == "__main__":

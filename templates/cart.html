@@ -8,47 +8,63 @@ Shopping Cart
 
 <h1>Shopping Cart</h1>
 
-<div class="cart-item">
+{% if cart_items %}
+    {% for item in cart_items %}
+    <div class="cart-item" style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px;">
 
-    <h2>Sample Product</h2>
+        <h2>{{ item.title }}</h2>
+
+        <p>
+            Price: ${{ "%.2f"|format(item.price) }} each
+        </p>
+
+        <p>
+            <strong>Item Total: ${{ "%.2f"|format(item.price * item.quantity) }}</strong>
+        </p>
+
+        <!-- Update Quantity Form -->
+        <form action="{{ url_for('cart_update', cart_item_id=item.cart_item_id) }}" method="POST" style="display: inline-block; margin-right: 10px;">
+            <label for="quantity-{{ item.cart_item_id }}">Quantity</label>
+            <input
+                type="number"
+                id="quantity-{{ item.cart_item_id }}"
+                name="quantity"
+                value="{{ item.quantity }}"
+                min="0"
+                max="{{ item.stock_quantity }}"
+                style="width: 60px;"
+            >
+            <button type="submit">Update Quantity</button>
+        </form>
+
+        <!-- Remove Item Form -->
+        <form action="{{ url_for('cart_remove', cart_item_id=item.cart_item_id) }}" method="POST" style="display: inline-block;">
+            <button type="submit" style="background-color: #a94442; color: white;">Remove</button>
+        </form>
+
+    </div>
+    {% endfor %}
+
+    <hr>
+
+    <h2>Cart Total</h2>
 
     <p>
-        Price: $19.99
+        Subtotal: ${{ "%.2f"|format(total) }}
     </p>
 
-    <label for="quantity">
-        Quantity
-    </label>
+    <a href="/checkout">
+        <button>
+            Proceed to Checkout
+        </button>
+    </a>
 
-    <input
-        type="number"
-        id="quantity"
-        value="1"
-        min="0"
-    >
-
-    <button>
-        Update Quantity
-    </button>
-
-    <button>
-        Remove
-    </button>
-
-</div>
-
-<hr>
-
-<h2>Cart Total</h2>
-
-<p>
-    Subtotal: $19.99
-</p>
-
-<a href="/checkout">
-    <button>
-        Proceed to Checkout
-    </button>
-</a>
+{% else %}
+    <p>Your shopping cart is empty.</p>
+    <br>
+    <a href="/products">
+        <button>Browse Products</button>
+    </a>
+{% endif %}
 
 {% endblock %}

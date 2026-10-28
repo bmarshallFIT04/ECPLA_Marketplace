@@ -62,6 +62,19 @@ def init_db():
         )
     ''')
 
+    # Initializes Shopping Cart table - bryan bermudez
+    cursor.execute('''
+            CREATE TABLE IF NOT EXISTS cart_items (
+                cart_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                product_id INTEGER NOT NULL,
+                quantity INTEGER NOT NULL DEFAULT 1,
+                UNIQUE(user_id, product_id)
+            )
+        ''')
+
+
+
     conn.commit()
     conn.close()
 
@@ -237,6 +250,100 @@ def get_payment_info(user_id):
     row = cursor.fetchone()
     conn.close()
     return {"card_number": row[0], "expiration": row[1]} if row else None
+
+    #Shopping car functions
+def add_to_cart(user_id, product_id, quantity=1):
+    """Adds a product to a user's cart or increments quantity if it already exists."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Check if item already exists in user's cart
+    cursor.execute('''
+        SELECT quantity FROM cart_items WHERE user_id = ? AND product_id = ?
+    ''', (user_id, product_id))
+    row = cursor.fetchone()
+
+    if row:
+        new_qty = row[0] + quantity
+        cursor.execute('''
+            UPDATE cart_items SET quantity = ? WHERE user_id = ? AND product_id = ?
+        ''', (new_qty, user_id, product_id))
+    else:
+        cursor.execute('''
+            INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, ?)
+        ''', (user_id, product_id, quantity))
+
+    conn.commit()
+    conn.close()
+    return {"success": True, "message": "Product added to cart."}
+
+
+def get_cart_items(user_id):
+    """Returns all items in a buyer's cart with product details."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT c.cart_item_id, p.product_id, p.title, p.price, c.quantity, p.stock_quantity
+        FROM cart_items c
+        JOIN products p ON c.product_id = p.product_id
+        WHERE c.user_id = ?
+    ''', (user_id,))
+    rows = cursor.fetchall()
+    conn.close()
+
+    return [
+        {
+            "cart_item_id": r[0],
+            "product_id": r[1],
+            "title": r[2],
+            "price": r[3],
+            "quantity": r[4],
+            "stock_quantity": r[5]
+        }
+        for r in rows
+    ]
+
+
+def update_cart_quantity(cart_item_id, quantity):
+    """Updates or removes an item quantity in the cart."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    if quantity <= 0:
+        cursor.execute('DELETE FROM cart_items WHERE cart_item_id = ?', (cart_item_id,))
+    else:
+        cursor.execute('UPDATE cart_items SET quantity = ? WHERE cart_item_id = ?', (quantity, cart_item_id))
+    conn.commit()
+    conn.close()
+    return {"success": True}
+
+
+def remove_from_cart(cart_item_id):
+    """Removes an item from the cart completely."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM cart_items WHERE cart_item_id = ?', (cart_item_id,))
+    conn.commit()
+    conn.close()
+    return {"success": True}
+
+
+def get_seller_cart_count(seller_id):
+    """Returns the total number of units of a seller's products currently sitting in all buyer carts."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT SUM(c.quantity)
+        FROM cart_items c
+        JOIN products p ON c.product_id = p.product_id
+        WHERE p.seller_id = ?
+    ''', (seller_id,))
+    result = cursor.fetchone()[0]
+    conn.close()
+    return result or 0
+
+
+
+
 
 
 # Command Line Interface (for standalone testing)

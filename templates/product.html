@@ -46,7 +46,7 @@
         {% endif %}
 
         {% if product.stock > 0 %}
-        <form method="POST">
+        <form action="{{ url_for('cart_add', product_id=product.id) }}" method="POST">
 
             <label for="quantity">
                 Quantity
