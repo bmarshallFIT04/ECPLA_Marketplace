@@ -332,6 +332,108 @@ textarea:focus {
 }
 
 
+/* ---------- Checkout Saved Information ---------- */
+
+.save-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.save-option input {
+    width: auto;
+    margin: 0;
+}
+
+.save-option label {
+    margin-bottom: 0;
+    font-weight: normal;
+}
+
+.saved-note {
+    color: #7b6a58;
+}
+
+.saved-note button {
+    margin-top: 0;
+    margin-left: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+}
+
+
+/* ---------- Product Tags ---------- */
+
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+
+    background-color: #eee4d5;
+    color: #4f4438;
+
+    border-radius: 12px;
+
+    padding: 4px 4px 4px 10px;
+
+    font-size: 13px;
+}
+
+.tag-remove {
+    background: none;
+    color: #7b6a58;
+
+    padding: 0 6px;
+    margin: 0;
+
+    font-size: 15px;
+}
+
+.tag-remove:hover {
+    background-color: #dfccb1;
+    color: #2f2a25;
+    transform: none;
+}
+
+/* Tags shown to buyers have no remove button, so they get even padding */
+.tag-static {
+    padding: 4px 10px;
+}
+
+.out-of-stock {
+    color: #a85739;
+    font-weight: bold;
+}
+
+.no-tags {
+    color: #7b6a58;
+    font-size: 13px;
+}
+
+.tag-form {
+    background: none;
+    box-shadow: none;
+    padding: 0;
+    margin-top: 0;
+}
+
+.tag-form input {
+    padding: 8px;
+    font-size: 14px;
+}
+
+.tag-form button {
+    margin-top: 8px;
+}
+
+
 /* ---------- Account / Dashboard Sections ---------- */
 
 .account-card,

@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
 {% block title %}
-Product Details
+{{ product.title }}
 {% endblock %}
 
 {% block content %}
 
-<h1>Sample Product</h1>
+<h1>{{ product.title }}</h1>
 
 <div class="product-details">
 
@@ -16,32 +16,50 @@ Product Details
 
     <div>
 
-        <h2>$19.99</h2>
+        <h2>${{ "%.2f"|format(product.price) }}</h2>
 
         <p>
-            This is where the product description will appear.
+            {{ product.description or "No description provided." }}
         </p>
 
+        <!-- Shows the seller's ID until accounts (and seller names) are implemented -->
         <p>
-            Seller: Sample Seller
+            Seller: Seller #{{ product.seller_id }}
         </p>
 
+        {% if product.stock > 0 %}
         <p>
-            Stock: 10
+            Stock: {{ product.stock }}
         </p>
+        {% else %}
+        <p class="out-of-stock">
+            Out of stock
+        </p>
+        {% endif %}
 
-        <form method="POST">
+        {% if product.tags %}
+        <div class="tag-list">
+            {% for tag in product.tags %}
+            <span class="tag tag-static">{{ tag }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if product.stock > 0 %}
+        <form action="{{ url_for('cart_add', product_id=product.id) }}" method="POST">
 
             <label for="quantity">
                 Quantity
             </label>
 
+            <!-- Buyers can't pick more than what's in stock -->
             <input
                 type="number"
                 id="quantity"
                 name="quantity"
                 value="1"
                 min="1"
+                max="{{ product.stock }}"
             >
 
             <button type="submit">
@@ -49,6 +67,7 @@ Product Details
             </button>
 
         </form>
+        {% endif %}
 
     </div>
 

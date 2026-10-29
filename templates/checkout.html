@@ -12,6 +12,16 @@ Checkout
 
     <h2>Shipping Information</h2>
 
+    <!-- Shown only when the buyer has a saved address; the fields below are auto-filled with it -->
+    {% if shipping %}
+    <p class="saved-note">
+        Filled in from your saved address.
+        <button type="button" class="clear-saved" data-fields="name,address">
+            Use a Different Address
+        </button>
+    </p>
+    {% endif %}
+
     <div>
         <label for="name">
             Full Name
@@ -21,6 +31,7 @@ Checkout
             type="text"
             id="name"
             name="name"
+            value="{{ shipping.full_name if shipping }}"
             required
         >
     </div>
@@ -34,11 +45,27 @@ Checkout
             type="text"
             id="address"
             name="address"
+            value="{{ shipping.address if shipping }}"
             required
         >
     </div>
 
+    <div class="save-option">
+        <input type="checkbox" id="save_shipping" name="save_shipping" value="1">
+        <label for="save_shipping">Save this address for future orders</label>
+    </div>
+
     <h2>Payment Information</h2>
+
+    <!-- Shown only when the buyer has a saved card; the CVV is never saved, so it is always re-entered -->
+    {% if payment %}
+    <p class="saved-note">
+        Filled in from your saved card. Please re-enter your CVV.
+        <button type="button" class="clear-saved" data-fields="card,expiration">
+            Use a Different Card
+        </button>
+    </p>
+    {% endif %}
 
     <div>
         <label for="card">
@@ -49,6 +76,7 @@ Checkout
             type="text"
             id="card"
             name="card"
+            value="{{ payment.card_number if payment }}"
             required
         >
     </div>
@@ -63,6 +91,7 @@ Checkout
             id="expiration"
             name="expiration"
             placeholder="MM/YY"
+            value="{{ payment.expiration if payment }}"
             required
         >
     </div>
@@ -80,6 +109,11 @@ Checkout
         >
     </div>
 
+    <div class="save-option">
+        <input type="checkbox" id="save_payment" name="save_payment" value="1">
+        <label for="save_payment">Save this card for future orders</label>
+    </div>
+
     <h2>Order Summary</h2>
 
     <p>
@@ -95,5 +129,18 @@ Checkout
     </button>
 
 </form>
+
+<script>
+    // Clears auto-filled fields so the buyer can enter a different address or card
+    document.querySelectorAll('.clear-saved').forEach((button) => {
+        button.addEventListener('click', () => {
+            const fieldIds = button.dataset.fields.split(',');
+            fieldIds.forEach((id) => {
+                document.getElementById(id).value = '';
+            });
+            document.getElementById(fieldIds[0]).focus();
+        });
+    });
+</script>
 
 {% endblock %}
