@@ -196,21 +196,21 @@ def add_account(username, password, role):
 
     '''Input Validation Checks'''
     # Username
-    if (len(username) > 64) or (len(username) < 3) :
+    if (len(username) < 3) or (len(username) > 64) :
         return {"success": False, "message": "Username must be between 3 and 64 characters."}
     elif not validate_input(username):
         return {"success": False, "message": f"An account for {username} already exists."}
     elif get_account(username):
-        return {"success": False, "message": f"The username given includes invalid characters."}
+        return {"success": False, "message": "The username given includes invalid characters."}
 
     # Password
-    if (len(password) > 6) or (len(username) < 64) :
+    if (len(password) < 6) or (len(password) > 64) :
         return {"success": False, "message": "Password must be between 6 and 64 characters."}
     elif not validate_input(username):
-        return {"success": False, "message": f"The password given includes invalid characters."}
+        return {"success": False, "message": "The password given includes invalid characters."}
 
     # Role
-    if (role != "buyer") or (role != "seller"):
+    if (role != "buyer") and (role != "seller"):
         return {"success": False, "message": "Account type must be a Buyer or Seller."}
 
     # Save account record
@@ -218,7 +218,7 @@ def add_account(username, password, role):
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO accounts (username, password, role)
-        VALUES (?, ?, ?, ?)
+        VALUES (?, ?, ?)
     ''', (username, password, role))
     conn.commit()
     conn.close()
