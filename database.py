@@ -23,14 +23,16 @@ def init_db():
         )
     ''')
 
-    # To-do: Initialize table 'accounts'
-        # name
-        # password
-        # id
-        # role
-            # fields for users
-            # fields for sellers f
-        # To-do: complete fields
+    # Initializes User Accounts database (one row per tag on a product)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS accounts (
+            user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL,
+            UNIQUE(user_id, username)
+        )
+    ''')
 
     # Initializes Reviews database
     cursor.execute('''
@@ -181,12 +183,54 @@ def add_review(body:str, rating:int, user_id:int, product_id:int):
     conn.close()
     return True
 
-# To-do
-def add_account():
-    pass
+# To-do: Hash password
+def password_hash(password: str) -> str:
+    return ""
+
+# To-do: Validate input with regexx
+def validate_input(text: str) -> bool:
+    return True
+
+# To-do: Complete add_account()
+def add_account(username, password, role):
+
+    '''Input Validation Checks'''
+    # Username
+    if (len(username) > 64) or (len(username) < 3) :
+        return {"success": False, "message": "Username must be between 3 and 64 characters."}
+    elif not validate_input(username):
+        return {"success": False, "message": f"An account for {username} already exists."}
+    elif get_account(username):
+        return {"success": False, "message": f"The username given includes invalid characters."}
+
+    # Password
+    if (len(password) > 6) or (len(username) < 64) :
+        return {"success": False, "message": "Password must be between 6 and 64 characters."}
+    elif not validate_input(username):
+        return {"success": False, "message": f"The password given includes invalid characters."}
+
+    # Role
+    if (role != "buyer") or (role != "seller"):
+        return {"success": False, "message": "Account type must be a Buyer or Seller."}
+
+    # Save account record
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO accounts (username, password, role)
+        VALUES (?, ?, ?, ?)
+    ''', (username, password, role))
+    conn.commit()
+    conn.close()
+
+    return {"success": True, "message": f"User account {username} has been successfully created."}
 
 # To-do
 def remove_account():
+    pass
+
+# To-do:
+def get_account(username: str):
     pass
 
 # To-do
