@@ -5,10 +5,10 @@ from database import (
     get_product_tags, set_product_tags,
     save_shipping_address, get_shipping_address, save_payment_info, get_payment_info,
     add_to_cart, get_cart_items, update_cart_quantity, remove_from_cart, get_seller_cart_count,
-    add_account
+    add_account, authenticate
 )
 app = Flask(__name__)
-
+app.secret_key = "REPLACE_THIS_BEFORE_PRODUCTION"
 
 @app.route("/")
 def home():
@@ -17,7 +17,6 @@ def home():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    print(request)
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
@@ -40,19 +39,26 @@ def register():
     return render_template("register.html")
 
 
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        name = request.form["name"]
+        username = request.form["username"]
         password = request.form["password"]
 
-        # To-do: Find account record with matching name. Compare password hashes.
-        # To-do: Notify user of login success or failure:
-            # Success - Perform session management, and redirect to home page
-            # Failure - State why account was not created. Possible failures:
-                # Invalid input (special characters, string too long or too short, etc.)
-                # Account name does not exist
-                # Server error
+        # Checks if user exists, then checks password hashes
+        result = authenticate(username, password)
+        success = result["success"]
+        message = result["message"]
+
+        # Notify user of login success or failure
+        if success:
+            # To-do: Add user_id and other fields to session
+            session["username"] = username
+            return redirect("/")
+        else:
+            # To-do: Incorporate message into website notification
+            print(message) # state reason for failure
+            return redirect("/login")
 
     return render_template("login.html")
 

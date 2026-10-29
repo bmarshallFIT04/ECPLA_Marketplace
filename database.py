@@ -1,10 +1,16 @@
 import sqlite3
 import os
+import bcrypt
 
 # Set database path inside the project's 'instance' directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'instance', 'marketplace.db')
-
+MAX_PASSWORD_LENGTH = 64
+MIN_PASSWORD_LENGTH = 6
+MAX_USERNAME_LENGTH = 64
+MIN_USERNAME_LENGTH = 3
+HASH_ROUNDS = 12
+SALT = bcrypt.gensalt(rounds=HASH_ROUNDS) # time to hash increases with rounds
 
 def init_db():
     """Initializes the database and creates the products table if it doesn't exist."""
@@ -183,10 +189,6 @@ def add_review(body:str, rating:int, user_id:int, product_id:int):
     conn.close()
     return True
 
-# To-do: Hash password
-def password_hash(password: str) -> str:
-    return ""
-
 # To-do: Validate input with regexx
 def validate_input(text: str) -> bool:
     return True
@@ -196,17 +198,17 @@ def add_account(username, password, role):
 
     '''Input Validation Checks'''
     # Username
-    if (len(username) < 3) or (len(username) > 64) :
-        return {"success": False, "message": "Username must be between 3 and 64 characters."}
+    if (len(username) < MIN_USERNAME_LENGTH) or (len(username) > MAX_USERNAME_LENGTH) :
+        return {"success": False, "message": f"Username must be between {MIN_USERNAME_LENGTH} and {MAX_USERNAME_LENGTH} characters."}
     elif not validate_input(username):
         return {"success": False, "message": f"An account for {username} already exists."}
     elif get_account(username):
         return {"success": False, "message": "The username given includes invalid characters."}
 
     # Password
-    if (len(password) < 6) or (len(password) > 64) :
-        return {"success": False, "message": "Password must be between 6 and 64 characters."}
-    elif not validate_input(username):
+    if (len(password) < MIN_PASSWORD_LENGTH) or (len(password) > MAX_PASSWORD_LENGTH) :
+        return {"success": False, "message": f"Password must be between {MIN_PASSWORD_LENGTH} and {MAX_PASSWORD_LENGTH} characters."}
+    elif not validate_input(password):
         return {"success": False, "message": "The password given includes invalid characters."}
 
     # Role
@@ -219,7 +221,7 @@ def add_account(username, password, role):
     cursor.execute('''
         INSERT INTO accounts (username, password, role)
         VALUES (?, ?, ?)
-    ''', (username, password, role))
+    ''', (username, bcrypt.hashpw(password.encode('utf-8'), SALT), role))
     conn.commit()
     conn.close()
 
@@ -232,6 +234,23 @@ def remove_account():
 # To-do:
 def get_account(username: str):
     pass
+
+def authenticate(username: str, password: str):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT a.password
+        FROM accounts a
+        WHERE a.username = ?
+    ''', (username,))
+    db_password = cursor.fetchone()
+    conn.close()
+
+    # if user exists and hashes are identical
+    if db_password and bcrypt.checkpw(password.encode('utf-8'), db_password[0]): 
+        return {"success": True, "message": f"User account {username} is successfully logged in."}
+    else:
+        return {"success": False, "message": f"The username does not exist, or the password does not match."}
 
 # To-do
 def get_account_detail(field: str):
