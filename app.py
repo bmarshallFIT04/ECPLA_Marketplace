@@ -4,7 +4,8 @@ from database import (
     init_db, add_product, remove_product, get_product, list_products, list_products_by_seller,
     get_product_tags, set_product_tags,
     save_shipping_address, get_shipping_address, save_payment_info, get_payment_info,
-    add_to_cart, get_cart_items, update_cart_quantity, remove_from_cart, get_seller_cart_count
+    add_to_cart, get_cart_items, update_cart_quantity, remove_from_cart, get_seller_cart_count,
+    add_account
 )
 app = Flask(__name__)
 
@@ -14,22 +15,27 @@ def home():
     return render_template("index.html")
 
 
-@app.route("/register")
+@app.route("/register", methods=["GET", "POST"])
 def register():
+    print(request)
     if request.method == "POST":
-        name = request.form["name"]
+        username = request.form["username"]
         password = request.form["password"]
         role = request.form["role"]
 
-        # To-do: Validate input for each field
-        # To-do: Hash password
-        # To-do: Insert account record into database
-        # To-do: Notify user of account creation success/failure:
-            # Success - Redirect user to login page, and prompt them to login
-            # Failure - State why account was not created. Possible failures:
-                # Invalid input (special characters, string too long or too short, etc.)
-                # Account with name already exists
-                # Server error
+        # Checks validity before inserting into accounts table
+        result = add_account(username, password, role)
+        success = result["success"]
+        message = result["message"]
+
+        # Notify user of account creation success/failure:
+        if success:
+            return redirect("/login")
+        else:
+            # To-do: Incorporate message into website notification
+            print(message) # state reason for failure
+            return redirect("/register")
+
 
     return render_template("register.html")
 
@@ -40,8 +46,6 @@ def login():
         name = request.form["name"]
         password = request.form["password"]
 
-        # To-do: Validate input for each field
-        # To-do: Hash password
         # To-do: Find account record with matching name. Compare password hashes.
         # To-do: Notify user of login success or failure:
             # Success - Perform session management, and redirect to home page
