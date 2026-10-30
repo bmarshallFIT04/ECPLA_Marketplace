@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}
+Account
+{% endblock %}
+
+{% block content %}
+
+<h1>My Account</h1>
+
+
+<section>
+    <h2>Are you sure?</h2>
+    <p>Enter your username and password below to confirm.</p>
+    <div>
+        <label for="username">Username</label>
+        <input
+            type="text"
+            id="username"
+            name="username"
+            required
+        >
+    </div>
+    <div>
+        <label for="password">Password</label>
+        <input
+            type="text"
+            id="password"
+            name="password"
+            required
+        >
+    </div>
+    
+    <button type="submit" onclick="confirm()">Confirm</button></a>
+</section>
+
+<section>
+    <h2>Go Back</h2>
+    <p>Cancel account deletion.</p>
+    <a href="/account"><button>Cancel</button></a>
+</section>
+
+{% endblock %}
