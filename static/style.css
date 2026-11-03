@@ -362,6 +362,15 @@ textarea:focus {
 }
 
 
+/* #Bryan Bermudez- Remove buttons on the Account page sit under their form without the form card styling */
+.remove-saved {
+    background: none;
+    box-shadow: none;
+    padding: 0;
+    margin-top: 0;
+}
+
+
 /* ---------- Product Tags ---------- */
 
 .tag-list {

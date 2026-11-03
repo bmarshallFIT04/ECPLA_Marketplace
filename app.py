@@ -4,6 +4,8 @@ from database import (
     init_db, add_product, remove_product, get_product, list_products, list_products_by_seller,
     get_product_tags, set_product_tags,
     save_shipping_address, get_shipping_address, save_payment_info, get_payment_info,
+    #Bryan Bermudez- Imported delete functions for removing saved info
+    delete_shipping_address, delete_payment_info,
     add_to_cart, get_cart_items, update_cart_quantity, remove_from_cart, get_seller_cart_count
 )
 app = Flask(__name__)
@@ -72,9 +74,47 @@ def orders():
     return render_template("orders.html")
 
 
+#Bryan Bermudez- Account page now shows the buyer's saved shipping and payment info
 @app.route("/account")
 def account():
-    return render_template("account.html")
+    user_id = session.get('user_id', 1)
+    return render_template(
+        "account.html",
+        shipping=get_shipping_address(user_id),
+        payment=get_payment_info(user_id)
+    )
+
+
+#Bryan Bermudez- Edit (or add) saved shipping address from the Account page
+@app.route("/account/shipping", methods=["POST"])
+def account_save_shipping():
+    user_id = session.get('user_id', 1)
+    save_shipping_address(user_id, request.form["name"], request.form["address"])
+    return redirect("/account")
+
+
+#Bryan Bermudez- Remove saved shipping address from the Account page
+@app.route("/account/shipping/remove", methods=["POST"])
+def account_remove_shipping():
+    user_id = session.get('user_id', 1)
+    delete_shipping_address(user_id)
+    return redirect("/account")
+
+
+#Bryan Bermudez- Edit (or add) saved payment info from the Account page
+@app.route("/account/payment", methods=["POST"])
+def account_save_payment():
+    user_id = session.get('user_id', 1)
+    save_payment_info(user_id, request.form["card"], request.form["expiration"])
+    return redirect("/account")
+
+
+#Bryan Bermudez- Remove saved payment info from the Account page
+@app.route("/account/payment/remove", methods=["POST"])
+def account_remove_payment():
+    user_id = session.get('user_id', 1)
+    delete_payment_info(user_id)
+    return redirect("/account")
 
 
 @app.route("/seller")

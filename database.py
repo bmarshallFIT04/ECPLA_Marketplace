@@ -232,6 +232,16 @@ def get_shipping_address(user_id):
     return {"full_name": row[0], "address": row[1]} if row else None
 
 
+#Bryan Bermudez- Remove a buyer's saved shipping address
+def delete_shipping_address(user_id):
+    """Removes a user's saved shipping address."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM saved_shipping WHERE user_id = ?', (user_id,))
+    conn.commit()
+    conn.close()
+
+
 def save_payment_info(user_id, card_number, expiration):
     """Saves a user's card for future orders, replacing any previously saved one. The CVV is never saved."""
     conn = sqlite3.connect(DB_PATH)
@@ -250,6 +260,16 @@ def get_payment_info(user_id):
     row = cursor.fetchone()
     conn.close()
     return {"card_number": row[0], "expiration": row[1]} if row else None
+
+
+#Bryan Bermudez- Remove a buyer's saved payment information
+def delete_payment_info(user_id):
+    """Removes a user's saved card."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM saved_payment WHERE user_id = ?', (user_id,))
+    conn.commit()
+    conn.close()
 
     #Shopping car functions
 def add_to_cart(user_id, product_id, quantity=1):
