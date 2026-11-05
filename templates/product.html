@@ -27,6 +27,13 @@
             Seller: Seller #{{ product.seller_id }}
         </p>
 
+        <!-- Buyers can message the seller; the subject is pre-filled with the product name -->
+        {% if product.seller_id != user_id %}
+        <a href="{{ url_for('messages', to=product.seller_id, subject='Question about ' ~ product.title) }}">
+            <button type="button">Message Seller</button>
+        </a>
+        {% endif %}
+
         {% if product.stock > 0 %}
         <p>
             Stock: {{ product.stock }}

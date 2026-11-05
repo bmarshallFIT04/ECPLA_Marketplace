@@ -481,6 +481,8 @@ textarea:focus {
 }
 
 .conversation {
+    display: block;
+
     padding: 14px;
 
     margin-bottom: 10px;
@@ -489,25 +491,178 @@ textarea:focus {
 
     background-color: #eee4d5;
 
+    color: #2f2a25;
+
+    text-decoration: none;
+
     cursor: pointer;
 }
 
-.conversation:hover {
+.conversation:hover,
+.conversation.active {
     background-color: #dfccb1;
 }
 
+.conversation.unread .conversation-name {
+    font-weight: bold;
+}
+
+.conversation-name,
+.conversation-subject,
+.conversation-date {
+    display: block;
+}
+
+.conversation-subject {
+    font-size: 14px;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.conversation-date {
+    font-size: 12px;
+
+    color: #7b6a58;
+}
+
+.unread-badge {
+    display: inline-block;
+
+    margin-left: 6px;
+
+    padding: 1px 8px;
+
+    border-radius: 10px;
+
+    background-color: #c06c48;
+
+    color: #fff;
+
+    font-size: 12px;
+}
+
+.new-message-link button {
+    width: 100%;
+
+    margin: 0 0 15px;
+}
+
+.no-conversations {
+    color: #7b6a58;
+}
+
+.form-error {
+    color: #a85739;
+    font-weight: bold;
+}
+
 .message-history {
-    min-height: 320px;
+    min-height: 120px;
+
+    margin-bottom: 20px;
 }
 
 .message {
-    max-width: 70%;
+    max-width: 80%;
 
     padding: 12px 16px;
 
     margin-bottom: 12px;
 
     border-radius: 18px;
+}
+
+.message-header {
+    display: flex;
+    flex-direction: column;
+
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+
+    border-bottom: 1px solid rgba(77, 61, 45, 0.15);
+}
+
+.message-header span {
+    font-size: 12px;
+
+    color: #7b6a58;
+}
+
+.conversation-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.conversation-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.blocked-users-link {
+    display: block;
+
+    margin-bottom: 15px;
+
+    color: #7b6a58;
+
+    font-size: 14px;
+}
+
+.blocked-users-link.active {
+    font-weight: bold;
+}
+
+.blocked-user {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    padding: 14px;
+
+    margin-bottom: 10px;
+
+    border-radius: 12px;
+
+    background-color: #eee4d5;
+}
+
+.blocked-user .conversation-date {
+    display: block;
+}
+
+/* Delete buttons sit inline without the form card styling */
+.delete-form {
+    background: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+}
+
+.delete-button {
+    margin-top: 0;
+
+    background-color: #a85739;
+}
+
+.delete-button-small {
+    margin-top: 8px;
+
+    padding: 4px 12px;
+
+    font-size: 12px;
+}
+
+/* Keep the line breaks the sender typed */
+.message-body {
+    white-space: pre-wrap;
 }
 
 .received {
@@ -517,6 +672,13 @@ textarea:focus {
 .sent {
     background-color: #cfe1d7;
     margin-left: auto;
+}
+
+
+/* TEMPORARY: user switcher in the nav bar, for testing until real login is built */
+.dev-user-switch {
+    font-size: 13px;
+    opacity: 0.85;
 }
 
 
