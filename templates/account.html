@@ -10,8 +10,9 @@ Account
 
 <section>
     <h2>Account Information</h2>
-    <p>Username: SampleUser</p>
-    <p>Account Type: Seller</p>
+    <p>Username: {{ current_username }}</p>
+    <p>User ID: {{ current_user_id }}</p>
+    <p>Account Type: {{ current_role }}</p>
     <a href="#"><button>Change Password</button></a>
     <a href="#"><button>Log Out</button></a>
     <a href="#"><button>Delete Account</button></a>
