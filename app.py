@@ -11,8 +11,6 @@ from database import (
     delete_shipping_address, delete_payment_info,
     add_account, authenticate
 )
-app = Flask(__name__)
-app.secret_key = "REPLACE_THIS_BEFORE_PRODUCTION"
 
 app = Flask(__name__)
 # Needed so the session can remember which user is logged in. Set SECRET_KEY in real deployments.
@@ -22,7 +20,8 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev-only-secret-key")
 # Makes the current user's ID available to every template (shown in the nav bar)
 @app.context_processor
 def inject_current_user():
-    return {"current_user_id": session.get('user_id', 1)}
+    return {"current_user_id": session.get('user_id', -1), "current_username": session.get('username', "")}
+
 
 
 # TEMPORARY: switch which user you are, until real login is built. Remove this route once login exists.
@@ -48,8 +47,8 @@ def register():
 
         # Checks validity before inserting into accounts table
         result = add_account(username, password, role)
-        success = result["success"]
-        message = result["message"]
+        success: bool = result["success"]
+        message: str = result["message"]
 
         # Notify user of account creation success/failure:
         if success:
@@ -71,13 +70,14 @@ def login():
 
         # Checks if user exists, then checks password hashes
         result = authenticate(username, password)
-        success = result["success"]
-        message = result["message"]
+        success: int = result["success"]
+        message: str = result["message"]
 
         # Notify user of login success or failure
         if success:
             # To-do: Add user_id and other fields to session
             session["username"] = username
+            session["user_id"] = success
             return redirect("/")
         else:
             # To-do: Incorporate message into website notification
@@ -103,14 +103,14 @@ def product(product_id):
     product = get_product(product_id)
     if product is None:
         abort(404)
-    return render_template("product.html", product=product, user_id=session.get('user_id', 1))
+    return render_template("product.html", product=product, user_id=session.get('user_id', -1))
 
 
 
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():
     # Fallback to default User ID 1 (SampleUser) since auth isn't fully built yet
-    user_id = session.get('user_id', 1)
+    user_id = session.get('user_id', -1)
 
     if request.method == "POST":
         # Only overwrite saved info when the buyer ticks "Save for future orders"
@@ -138,7 +138,7 @@ def orders():
 #Bryan Bermudez- Account page now shows the buyer's saved shipping and payment info
 @app.route("/account")
 def account():
-    user_id = session.get('user_id', 1)
+    user_id = session.get('user_id', -1)
     return render_template(
         "account.html",
         shipping=get_shipping_address(user_id),
@@ -149,7 +149,7 @@ def account():
 #Bryan Bermudez- Edit (or add) saved shipping address from the Account page
 @app.route("/account/shipping", methods=["POST"])
 def account_save_shipping():
-    user_id = session.get('user_id', 1)
+    user_id = session.get('user_id', -1)
     save_shipping_address(user_id, request.form["name"], request.form["address"])
     return redirect("/account")
 
@@ -157,7 +157,7 @@ def account_save_shipping():
 #Bryan Bermudez- Remove saved shipping address from the Account page
 @app.route("/account/shipping/remove", methods=["POST"])
 def account_remove_shipping():
-    user_id = session.get('user_id', 1)
+    user_id = session.get('user_id', -1)
     delete_shipping_address(user_id)
     return redirect("/account")
 
@@ -165,7 +165,7 @@ def account_remove_shipping():
 #Bryan Bermudez- Edit (or add) saved payment info from the Account page
 @app.route("/account/payment", methods=["POST"])
 def account_save_payment():
-    user_id = session.get('user_id', 1)
+    user_id = session.get('user_id', -1)
     save_payment_info(user_id, request.form["card"], request.form["expiration"])
     return redirect("/account")
 
@@ -173,14 +173,14 @@ def account_save_payment():
 #Bryan Bermudez- Remove saved payment info from the Account page
 @app.route("/account/payment/remove", methods=["POST"])
 def account_remove_payment():
-    user_id = session.get('user_id', 1)
+    user_id = session.get('user_id', -1)
     delete_payment_info(user_id)
     return redirect("/account")
 
 
 @app.route("/seller")
 def seller():
-    seller_id = session.get('user_id', 1)
+    seller_id = session.get('user_id', -1)
 
     products = [
         {"id": p[0], "title": p[1], "price": p[3], "stock": p[4], "tags": get_product_tags(p[0])}
@@ -224,14 +224,14 @@ def render_messages(user_id, other_id=None, error=None, form=None, show_blocked=
 # Messages page: list of everyone the user has messaged with, and a form to start a new conversation
 @app.route("/messages")
 def messages():
-    user_id = session.get('user_id', 1)
+    user_id = session.get('user_id', -1)
     return render_messages(user_id)
 
 
 # Past messages with one user, with a form to reply
 @app.route("/messages/<int:other_id>")
 def conversation(other_id):
-    user_id = session.get('user_id', 1)
+    user_id = session.get('user_id', -1)
     if other_id == user_id:
         return redirect(url_for('messages'))
     return render_messages(user_id, other_id)
@@ -239,7 +239,7 @@ def conversation(other_id):
 
 @app.route("/messages/send", methods=["POST"])
 def message_send():
-    user_id = session.get('user_id', 1)
+    user_id = session.get('user_id', -1)
     form = {
         "recipient_id": request.form.get("recipient_id", "").strip(),
         "subject": request.form.get("subject", ""),
@@ -263,7 +263,7 @@ def message_send():
 # Deletes one message from the current user's mailbox (the other user still sees it)
 @app.route("/messages/delete/<int:message_id>", methods=["POST"])
 def message_delete(message_id):
-    user_id = session.get('user_id', 1)
+    user_id = session.get('user_id', -1)
     other_id = delete_message(user_id, message_id)
     if other_id is None:
         abort(404)
@@ -273,7 +273,7 @@ def message_delete(message_id):
 # Deletes the whole conversation with one user from the current user's mailbox
 @app.route("/messages/<int:other_id>/delete", methods=["POST"])
 def conversation_delete(other_id):
-    user_id = session.get('user_id', 1)
+    user_id = session.get('user_id', -1)
     delete_conversation(user_id, other_id)
     return redirect(url_for('messages'))
 
@@ -281,14 +281,14 @@ def conversation_delete(other_id):
 # Blocked Users list, where the user can unblock people
 @app.route("/messages/blocked")
 def blocked_users():
-    user_id = session.get('user_id', 1)
+    user_id = session.get('user_id', -1)
     return render_messages(user_id, show_blocked=True)
 
 
 # Blocks a user: their communication is hidden and their new messages don't notify
 @app.route("/messages/<int:other_id>/block", methods=["POST"])
 def user_block(other_id):
-    user_id = session.get('user_id', 1)
+    user_id = session.get('user_id', -1)
     result = block_user(user_id, other_id)
     if not result["success"]:
         abort(400)
@@ -298,7 +298,7 @@ def user_block(other_id):
 # Unblocks a user: reveals their hidden communication and removes them from the Blocked Users list
 @app.route("/messages/<int:other_id>/unblock", methods=["POST"])
 def user_unblock(other_id):
-    user_id = session.get('user_id', 1)
+    user_id = session.get('user_id', -1)
     unblock_user(user_id, other_id)
     # Go back to where the Unblock button was clicked (the Blocked Users list or the conversation)
     if request.form.get("next") == "blocked":
@@ -330,7 +330,7 @@ def return_product():
 @app.route('/api/add-product', methods=['POST'])
 def handle_add_product():
     # Use session if available, but fallback to default Seller ID 1 (SampleUser) since auth isn't fully built yet
-    seller_id = session.get('user_id', 1)
+    seller_id = session.get('user_id', -1)
 
     data = request.get_json()
     title = data.get('title')
@@ -360,7 +360,7 @@ def handle_add_product():
 @app.route('/api/products/<int:product_id>/tags', methods=['POST'])
 def handle_set_tags(product_id):
     # Fallback to default Seller ID 1 (SampleUser) since auth isn't fully built yet
-    seller_id = session.get('user_id', 1)
+    seller_id = session.get('user_id', -1)
 
     tags = request.get_json().get('tags', [])
     if not isinstance(tags, list):
@@ -373,7 +373,7 @@ def handle_set_tags(product_id):
 #Shopping cart - bryan bermudez
 @app.route("/cart/add/<int:product_id>", methods=["POST"])
 def cart_add(product_id):
-    user_id = session.get('user_id', 1)  # Fallback to user 1 for now
+    user_id = session.get('user_id', -1)  # Fallback to user 1 for now
     try:
         qty = int(request.form.get('quantity', 1))
     except ValueError:
@@ -401,7 +401,7 @@ def cart_remove(cart_item_id):
 
 @app.route("/cart")
 def cart():
-    user_id = session.get('user_id', 1)
+    user_id = session.get('user_id', -1)
     items = get_cart_items(user_id)
     total = sum(item['price'] * item['quantity'] for item in items)
     return render_template("cart.html", cart_items=items, total=total)
