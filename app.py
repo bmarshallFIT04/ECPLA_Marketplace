@@ -1,14 +1,38 @@
+import os
+
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, abort
 
 from database import (
+    #Bryan Bermudez- Imported delete functions for removing saved info
     init_db, add_product, remove_product, get_product, list_products, list_products_by_seller,
     get_product_tags, set_product_tags,
     save_shipping_address, get_shipping_address, save_payment_info, get_payment_info,
     add_to_cart, get_cart_items, update_cart_quantity, remove_from_cart, get_seller_cart_count,
+    delete_shipping_address, delete_payment_info,
     add_account, authenticate
 )
 app = Flask(__name__)
 app.secret_key = "REPLACE_THIS_BEFORE_PRODUCTION"
+
+app = Flask(__name__)
+# Needed so the session can remember which user is logged in. Set SECRET_KEY in real deployments.
+app.secret_key = os.environ.get("SECRET_KEY", "dev-only-secret-key")
+
+
+# Makes the current user's ID available to every template (shown in the nav bar)
+@app.context_processor
+def inject_current_user():
+    return {"current_user_id": session.get('user_id', 1)}
+
+
+# TEMPORARY: switch which user you are, until real login is built. Remove this route once login exists.
+@app.route("/dev/login/<int:user_id>")
+def dev_login(user_id):
+    if user_id < 1:
+        abort(400)
+    session['user_id'] = user_id
+    return redirect(request.referrer or url_for('messages'))
+
 
 @app.route("/")
 def home():
@@ -79,7 +103,7 @@ def product(product_id):
     product = get_product(product_id)
     if product is None:
         abort(404)
-    return render_template("product.html", product=product)
+    return render_template("product.html", product=product, user_id=session.get('user_id', 1))
 
 
 
@@ -111,9 +135,47 @@ def orders():
     return render_template("orders.html")
 
 
+#Bryan Bermudez- Account page now shows the buyer's saved shipping and payment info
 @app.route("/account")
 def account():
-    return render_template("account.html")
+    user_id = session.get('user_id', 1)
+    return render_template(
+        "account.html",
+        shipping=get_shipping_address(user_id),
+        payment=get_payment_info(user_id)
+    )
+
+
+#Bryan Bermudez- Edit (or add) saved shipping address from the Account page
+@app.route("/account/shipping", methods=["POST"])
+def account_save_shipping():
+    user_id = session.get('user_id', 1)
+    save_shipping_address(user_id, request.form["name"], request.form["address"])
+    return redirect("/account")
+
+
+#Bryan Bermudez- Remove saved shipping address from the Account page
+@app.route("/account/shipping/remove", methods=["POST"])
+def account_remove_shipping():
+    user_id = session.get('user_id', 1)
+    delete_shipping_address(user_id)
+    return redirect("/account")
+
+
+#Bryan Bermudez- Edit (or add) saved payment info from the Account page
+@app.route("/account/payment", methods=["POST"])
+def account_save_payment():
+    user_id = session.get('user_id', 1)
+    save_payment_info(user_id, request.form["card"], request.form["expiration"])
+    return redirect("/account")
+
+
+#Bryan Bermudez- Remove saved payment info from the Account page
+@app.route("/account/payment/remove", methods=["POST"])
+def account_remove_payment():
+    user_id = session.get('user_id', 1)
+    delete_payment_info(user_id)
+    return redirect("/account")
 
 
 @app.route("/seller")
@@ -131,9 +193,117 @@ def seller():
     return render_template("seller.html", products=products, total_in_carts=total_in_carts)
 
 
+def render_messages(user_id, other_id=None, error=None, form=None, show_blocked=False):
+    """Renders the messages page: the conversation list, plus one conversation, the compose form,
+    or the Blocked Users list."""
+    # A blocked user's messages stay hidden (and unread status untouched) until they're unblocked
+    other_blocked = bool(other_id) and is_blocked(user_id, other_id)
+    thread = get_conversation(user_id, other_id) if other_id and not other_blocked else None
+
+    if form is None:
+        # Pre-fill the compose form, e.g. from a product page's "Message Seller" button
+        form = {"recipient_id": request.args.get("to", ""), "subject": request.args.get("subject", ""), "body": ""}
+        # Replies default to "Re: <latest subject>", like email
+        if thread:
+            last_subject = thread[-1]["subject"]
+            form["subject"] = last_subject if last_subject.startswith("Re: ") else f"Re: {last_subject}"
+
+    return render_template(
+        "messages.html",
+        conversations=list_conversations(user_id),
+        other_id=other_id,
+        other_blocked=other_blocked,
+        thread=thread,
+        error=error,
+        form=form,
+        show_blocked=show_blocked,
+        blocked_users=list_blocked_users(user_id)
+    )
+
+
+# Messages page: list of everyone the user has messaged with, and a form to start a new conversation
 @app.route("/messages")
 def messages():
-    return render_template("messages.html")
+    user_id = session.get('user_id', 1)
+    return render_messages(user_id)
+
+
+# Past messages with one user, with a form to reply
+@app.route("/messages/<int:other_id>")
+def conversation(other_id):
+    user_id = session.get('user_id', 1)
+    if other_id == user_id:
+        return redirect(url_for('messages'))
+    return render_messages(user_id, other_id)
+
+
+@app.route("/messages/send", methods=["POST"])
+def message_send():
+    user_id = session.get('user_id', 1)
+    form = {
+        "recipient_id": request.form.get("recipient_id", "").strip(),
+        "subject": request.form.get("subject", ""),
+        "body": request.form.get("body", "")
+    }
+
+    try:
+        recipient_id = int(form["recipient_id"])
+    except ValueError:
+        return render_messages(user_id, error="Please enter a valid recipient user ID.", form=form), 400
+
+    result = send_message(user_id, recipient_id, form["subject"], form["body"])
+    if not result["success"]:
+        # Re-show the same page with the error, keeping what the user typed
+        other_id = recipient_id if recipient_id != user_id and recipient_id > 0 else None
+        return render_messages(user_id, other_id, error=result["message"], form=form), 400
+
+    return redirect(url_for('conversation', other_id=recipient_id))
+
+
+# Deletes one message from the current user's mailbox (the other user still sees it)
+@app.route("/messages/delete/<int:message_id>", methods=["POST"])
+def message_delete(message_id):
+    user_id = session.get('user_id', 1)
+    other_id = delete_message(user_id, message_id)
+    if other_id is None:
+        abort(404)
+    return redirect(url_for('conversation', other_id=other_id))
+
+
+# Deletes the whole conversation with one user from the current user's mailbox
+@app.route("/messages/<int:other_id>/delete", methods=["POST"])
+def conversation_delete(other_id):
+    user_id = session.get('user_id', 1)
+    delete_conversation(user_id, other_id)
+    return redirect(url_for('messages'))
+
+
+# Blocked Users list, where the user can unblock people
+@app.route("/messages/blocked")
+def blocked_users():
+    user_id = session.get('user_id', 1)
+    return render_messages(user_id, show_blocked=True)
+
+
+# Blocks a user: their communication is hidden and their new messages don't notify
+@app.route("/messages/<int:other_id>/block", methods=["POST"])
+def user_block(other_id):
+    user_id = session.get('user_id', 1)
+    result = block_user(user_id, other_id)
+    if not result["success"]:
+        abort(400)
+    return redirect(url_for('messages'))
+
+
+# Unblocks a user: reveals their hidden communication and removes them from the Blocked Users list
+@app.route("/messages/<int:other_id>/unblock", methods=["POST"])
+def user_unblock(other_id):
+    user_id = session.get('user_id', 1)
+    unblock_user(user_id, other_id)
+    # Go back to where the Unblock button was clicked (the Blocked Users list or the conversation)
+    if request.form.get("next") == "blocked":
+        return redirect(url_for('blocked_users'))
+    return redirect(url_for('conversation', other_id=other_id))
 
 
 @app.route("/archive")

@@ -10,56 +10,190 @@ Messages
 
 <div class="messages-container">
 
+    <!-- Everyone this user has sent messages to or received messages from -->
     <div class="conversation-list">
 
         <h2>Conversations</h2>
 
-        <div class="conversation">
-            Sample Seller
-        </div>
+        <a href="{{ url_for('messages') }}" class="new-message-link">
+            <button type="button">New Message</button>
+        </a>
 
-        <div class="conversation">
-            Another Seller
-        </div>
+        <!-- People this user has blocked, where they can be unblocked -->
+        <a href="{{ url_for('blocked_users') }}"
+           class="blocked-users-link{% if show_blocked %} active{% endif %}">
+            Blocked Users{% if blocked_users %} ({{ blocked_users|length }}){% endif %}
+        </a>
+
+        {% for convo in conversations %}
+        <a href="{{ url_for('conversation', other_id=convo.user_id) }}"
+           class="conversation{% if convo.user_id == other_id %} active{% endif %}{% if convo.unread %} unread{% endif %}">
+            <span class="conversation-name">
+                User #{{ convo.user_id }}
+                {% if convo.unread %}
+                <span class="unread-badge">{{ convo.unread }}</span>
+                {% endif %}
+            </span>
+            <span class="conversation-subject">{{ convo.last_subject }}</span>
+            <span class="conversation-date">{{ convo.last_sent_at }}</span>
+        </a>
+        {% else %}
+        <p class="no-conversations">No conversations yet.</p>
+        {% endfor %}
 
     </div>
 
 
     <div class="message-area">
 
-        <h2>Sample Seller</h2>
+        {% if show_blocked %}
+        <!-- Blocked Users list: unblocking reveals that user's hidden communication again -->
+        <h2>Blocked Users</h2>
+        <p class="no-conversations">
+            Messages from blocked users are hidden and don't notify you. Unblock someone to see them again.
+        </p>
 
-        <div class="message-history">
+        {% for blocked in blocked_users %}
+        <div class="blocked-user">
+            <span>
+                <strong>User #{{ blocked.user_id }}</strong>
+                <span class="conversation-date">Blocked {{ blocked.blocked_at }}</span>
+            </span>
+            <form method="POST" action="{{ url_for('user_unblock', other_id=blocked.user_id) }}" class="delete-form">
+                <input type="hidden" name="next" value="blocked">
+                <button type="submit">Unblock</button>
+            </form>
+        </div>
+        {% else %}
+        <p>You haven't blocked anyone.</p>
+        {% endfor %}
 
-            <div class="message received">
-                Hello! How can I help you?
+        {% elif other_id and other_blocked %}
+        <!-- This user is blocked, so their communication stays hidden -->
+        <h2>Conversation with User #{{ other_id }}</h2>
+
+        {% if error %}
+        <p class="form-error">{{ error }}</p>
+        {% endif %}
+
+        <p class="no-conversations">
+            You've blocked User #{{ other_id }}. Their messages are hidden and won't notify you.
+        </p>
+        <form method="POST" action="{{ url_for('user_unblock', other_id=other_id) }}" class="delete-form">
+            <button type="submit">Unblock User</button>
+        </form>
+
+        {% else %}
+
+        {% if other_id %}
+        <div class="conversation-heading">
+            <h2>Conversation with User #{{ other_id }}</h2>
+
+            <div class="conversation-actions">
+                <!-- Hides this user's communication; they can be unblocked from Blocked Users -->
+                <form method="POST" action="{{ url_for('user_block', other_id=other_id) }}"
+                      class="delete-form"
+                      onsubmit="return confirm('Block User #{{ other_id }}? Their messages will be hidden and won\'t notify you.');">
+                    <button type="submit" class="delete-button">Block User</button>
+                </form>
+
+                <!-- Removes the whole conversation from this user's mailbox only -->
+                {% if thread %}
+                <form method="POST" action="{{ url_for('conversation_delete', other_id=other_id) }}"
+                      class="delete-form"
+                      onsubmit="return confirm('Delete this whole conversation? User #{{ other_id }} will still have their copy.');">
+                    <button type="submit" class="delete-button">Delete Conversation</button>
+                </form>
+                {% endif %}
             </div>
-
-            <div class="message sent">
-                Hi, I had a question about this product.
-            </div>
-
         </div>
 
+        <!-- Past messages, oldest first, shown like an email thread -->
+        <div class="message-history">
+            {% for msg in thread %}
+            <div class="message {{ 'sent' if msg.sent_by_me else 'received' }}">
+                <div class="message-header">
+                    <strong>{{ msg.subject }}</strong>
+                    <span>
+                        {% if msg.sent_by_me %}
+                        From: You &rarr; To: User #{{ msg.recipient_id }}
+                        {% else %}
+                        From: User #{{ msg.sender_id }} &rarr; To: You
+                        {% endif %}
+                        &middot; {{ msg.sent_at }}
+                    </span>
+                </div>
+                <div class="message-body">{{ msg.body }}</div>
 
-        <form method="POST">
+                <!-- Removes this message from this user's mailbox only -->
+                <form method="POST" action="{{ url_for('message_delete', message_id=msg.id) }}"
+                      class="delete-form"
+                      onsubmit="return confirm('Delete this message?');">
+                    <button type="submit" class="delete-button delete-button-small">Delete</button>
+                </form>
+            </div>
+            {% else %}
+            <p class="no-conversations">No messages with this user yet. Send the first one below.</p>
+            {% endfor %}
+        </div>
 
-            <label for="message">
-                Message
-            </label>
+        <h3>Reply</h3>
+        {% else %}
+        <h2>New Message</h2>
+        {% endif %}
 
-            <textarea
-                id="message"
-                name="message"
-                placeholder="Type your message..."
-                required
-            ></textarea>
+        {% if error %}
+        <p class="form-error">{{ error }}</p>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('message_send') }}">
+
+            {% if other_id %}
+            <input type="hidden" name="recipient_id" value="{{ other_id }}">
+            {% else %}
+            <div>
+                <label for="recipient_id">To (User ID)</label>
+                <input
+                    type="number"
+                    id="recipient_id"
+                    name="recipient_id"
+                    min="1"
+                    value="{{ form.recipient_id }}"
+                    required
+                >
+            </div>
+            {% endif %}
+
+            <div>
+                <label for="subject">Subject</label>
+                <input
+                    type="text"
+                    id="subject"
+                    name="subject"
+                    maxlength="200"
+                    value="{{ form.subject }}"
+                    required
+                >
+            </div>
+
+            <div>
+                <label for="body">Message</label>
+                <textarea
+                    id="body"
+                    name="body"
+                    rows="6"
+                    placeholder="Type your message..."
+                    required
+                >{{ form.body }}</textarea>
+            </div>
 
             <button type="submit">
                 Send
             </button>
 
         </form>
+
+        {% endif %}
 
     </div>
 

@@ -31,6 +31,12 @@
             <a href="/messages">Messages</a>
             <a href="/account">Account</a>
             <a href="/login">Login</a>
+
+            <!-- TEMPORARY: switch users for testing until real login is built -->
+            <span class="dev-user-switch">
+                User #{{ current_user_id }}
+                (<a href="/dev/login/{{ 2 if current_user_id == 1 else 1 }}">switch to #{{ 2 if current_user_id == 1 else 1 }}</a>)
+            </span>
         </div>
     </nav>
 
