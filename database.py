@@ -23,6 +23,23 @@ def init_db():
         )
     ''')
 
+    # Initializes User Accounts database (one row per tag on a product)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS accounts (
+            user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL,
+            UNIQUE(user_id, username)
+        )
+    ''')
+
+    # TODO: This account is used for testing purposes, remove later
+    cursor.execute('''
+        INSERT INTO accounts (username, password, role)
+        VALUES ("testUser","testPass","buyer")
+    ''')
+
     # Initializes Reviews database
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS reviews (
