@@ -34,6 +34,12 @@ def init_db():
         )
     ''')
 
+    # TODO: This account is used for testing purposes, remove later
+    cursor.execute('''
+        INSERT INTO accounts (username, password, role)
+        VALUES ("testUser","testPass","buyer")
+    ''')
+
     # Initializes Reviews database
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS reviews (
@@ -226,8 +232,27 @@ def add_account(username, password, role):
     return {"success": True, "message": f"User account {username} has been successfully created."}
 
 # To-do
-def remove_account():
-    pass
+def remove_account(username:str, password:str):
+    if username is None or password is None: return -1
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute('''
+        SELECT * FROM accounts WHERE username = ?
+    ''', (username))
+    account = cursor.fetchone()
+    
+    if password.equals(account.password):
+        cursor.execute('''
+            DELETE FROM accounts WHERE username = ?
+        ''', (username))
+
+        conn.commit()
+        conn.close()
+        return 0
+    else:
+        return -1
+    
 
 # To-do:
 def get_account(username: str):
