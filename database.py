@@ -33,10 +33,9 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS accounts (
             user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL,
+            username TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
-            role TEXT NOT NULL,
-            UNIQUE(user_id, username)
+            role TEXT NOT NULL
         )
     ''')
 
@@ -264,22 +263,32 @@ def remove_account():
 def get_account(username: str):
     pass
 
-def authenticate(username: str, password: str):
+# Input: An account username and password (unencrypted)
+# Output:
+#   the success key stores the user_id, and the message key stores the reason for success/failure.
+#   If the username/password combo matches, the user's ID is returned.
+#   If the combo is invalid, a None is returned.
+def authenticate(username: str, password: str) -> int:
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT a.password
+        SELECT a.user_id, a.password
         FROM accounts a
         WHERE a.username = ?
     ''', (username,))
-    db_password = cursor.fetchone()
+
+    db_fetched = cursor.fetchall()
+    if len(db_fetched) == 0:
+        return {"success": None, "message": f"The username does not exist, or the password does not match."}
+
+    db_user_id, db_password = db_fetched[0]
     conn.close()
 
     # if user exists and hashes are identical
-    if db_password and bcrypt.checkpw(password.encode('utf-8'), db_password[0]): 
-        return {"success": True, "message": f"User account {username} is successfully logged in."}
+    if db_password and bcrypt.checkpw(password.encode('utf-8'), db_password): 
+        return {"success": db_user_id, "message": f"User account {username} is successfully logged in."}
     else:
-        return {"success": False, "message": f"The username does not exist, or the password does not match."}
+        return {"success": None, "message": f"The username does not exist, or the password does not match."}
 
 # To-do
 def get_account_detail(field: str):
