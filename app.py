@@ -5,7 +5,7 @@ from database import (
     get_product_tags, set_product_tags,
     save_shipping_address, get_shipping_address, save_payment_info, get_payment_info,
     add_to_cart, get_cart_items, update_cart_quantity, remove_from_cart, get_seller_cart_count,
-    add_account
+    add_account, remove_account
 )
 app = Flask(__name__)
 
@@ -108,6 +108,23 @@ def orders():
 @app.route("/account")
 def account():
     return render_template("account.html")
+
+@app.route("/unregister")
+def unregister():
+    # Fallback to default User ID 1 (SampleUser) since auth isn't fully built yet
+    # user_id = session.get('user_id', 1)
+    return render_template("unregister.html")
+
+def confirm():
+    passwd = request.form.get("password")
+    user = request.form.get("username")
+    exit_code = remove_account(user, passwd)
+    if exit_code == 0:
+        return render_template("unregistered.html")
+    elif exit_code == -1:
+        pass
+    return -1
+
 
 
 @app.route("/seller")
