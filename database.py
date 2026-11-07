@@ -217,6 +217,22 @@ def add_review(body:str, rating:int, user_id:int, product_id:int):
     conn.close()
     return True
 
+def get_reviews(product_id:int):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    print(type(product_id))
+    cursor.execute('''
+        SELECT body, rating, user_id 
+        FROM reviews 
+        WHERE product_id = ?;
+    ''', (product_id, ))
+    reviews = cursor.fetchall()
+    conn.commit()
+    conn.close()
+    for x in reviews: print(x)
+    return reviews
+
+
 # To-do: Validate input with regexx
 def validate_input(text: str) -> bool:
     return True

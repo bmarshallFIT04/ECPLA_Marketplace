@@ -6,6 +6,7 @@ from database import (
     #Bryan Bermudez- Imported delete functions for removing saved info
     init_db, add_product, remove_product, get_product, list_products, list_products_by_seller,
     get_product_tags, set_product_tags,
+    add_review, get_reviews,
     save_shipping_address, get_shipping_address, save_payment_info, get_payment_info,
     add_to_cart, get_cart_items, update_cart_quantity, remove_from_cart, get_seller_cart_count,
     delete_shipping_address, delete_payment_info,
@@ -110,11 +111,14 @@ def products():
 @app.route("/product/<int:product_id>")
 def product(product_id):
     product = get_product(product_id)
+    render_reviews(product_id)
     if product is None:
         abort(404)
     return render_template("product.html", product=product, user_id=session.get('user_id', DEFAULT_ID))
 
-
+def render_reviews(product_id):
+    reviews = get_reviews(product_id)
+    return render_template("reviews.html")
 
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():
