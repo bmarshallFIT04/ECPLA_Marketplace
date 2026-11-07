@@ -114,6 +114,85 @@ def init_db():
         )
     ''')
 
+    # Initializes Orders/Transactions table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS orders (
+            order_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL,
+            quantity INTEGER NOT NULL,
+            date TIMESTAMP DEFAULT (datetime('now', 'localtime')),
+            address TEXT NOT NULL,
+            total REAL NOT NULL
+        )
+    ''')
+
+    # Calculates order total, decreases seller's stock, and saves the order
+    def add_order(user_id: int, product_id: int, quantity: int, date:str, address:str) -> bool:
+        # Details for order info
+        product = get_product(product_id)
+        total = product.get("price") * quantity
+
+        # Create record for the order
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO orders (user_id, product_id, quantity, date, address, total)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (user_id, product_id, quantity, date, address, total))
+
+        # Decrease product's stock by the quantity ordered
+        new_stock = product.get("stock") - quantity
+        cursor.execute('''
+            UPDATE products p
+            SET stock = ?
+            WHERE p.product_id = ?;
+        ''', (new_stock, product_id))
+
+        conn.close()
+        return True
+
+    # Returns list of order IDs connected to user ID.
+    def get_orders(user_id: int) -> list:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT o.order_id
+            FROM orders o
+            WHERE o.user_id = ?
+        ''', (user_id,))
+        orders = cursor.fetchall()
+        conn.close()
+
+        print(f"ORDERS: {orders}")
+        return orders if len(orders) > 0 else None
+
+    # Given an ID, returns all order attributes
+    def get_order_details(order_id: int) -> dict:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT o.user_id, o.product_id, o.quantity, o.date, o.address, o.total
+            FROM orders o
+            WHERE o.order_id = ?
+        ''', (order_id,))
+        order = cursor.fetchall()
+        conn.close()
+
+        if len(order) > 0:
+            user_id, product_id, quantity, date, address, total = order[0]
+            order_dict = {
+                "user_id": user_id,
+                "product_id": product_id,
+                "quantity": quantity,
+                "date": date,
+                "address": address,
+                "total": total
+            }
+            return order_dict
+        else:
+            return None
+
     # Adds the "deleted" flags to messages tables created before message deletion existed
     message_columns = [row[1] for row in cursor.execute('PRAGMA table_info(messages)')]
     for column in ('sender_deleted', 'recipient_deleted'):
