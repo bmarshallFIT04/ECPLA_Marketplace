@@ -121,8 +121,10 @@ def init_db():
             order_id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             product_id INTEGER NOT NULL,
+            product_title TEXT NOT NULL,
             quantity INTEGER NOT NULL,
             date TIMESTAMP DEFAULT (datetime('now', 'localtime')),
+            full_name TEXT NOT NULL,
             address TEXT NOT NULL,
             total REAL NOT NULL,
             status TEXT NOT NULL
@@ -310,7 +312,7 @@ def get_account_detail(field: str):
     pass
 
 # Calculates order total, decreases seller's stock, and saves the order
-def add_order(user_id: int, product_id: int, quantity: int, date:str, address:str) -> bool:
+def add_order(user_id: int, product_id: int, quantity: int, address: dict) -> bool:
     # Details for order info
     product = get_product(product_id)
     total = product.get("price") * quantity
@@ -319,18 +321,19 @@ def add_order(user_id: int, product_id: int, quantity: int, date:str, address:st
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO orders (user_id, product_id, quantity, date, address, total, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''', (user_id, product_id, quantity, date, address, total, DEFAULT_ORDER_STATUS))
+        INSERT INTO orders (user_id, product_id, product_title, quantity, address, full_name, total, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (user_id, product_id, product["title"], quantity, address["address"], address["full_name"], total, DEFAULT_ORDER_STATUS))
 
     # Decrease product's stock by the quantity ordered
     new_stock = product.get("stock") - quantity
     cursor.execute('''
-        UPDATE products p
-        SET stock = ?
-        WHERE p.product_id = ?;
+        UPDATE products
+        SET stock_quantity = ?
+        WHERE product_id = ?;
     ''', (new_stock, product_id))
 
+    conn.commit()
     conn.close()
     return True
 
@@ -353,7 +356,7 @@ def get_order_details(order_id: int) -> dict:
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT o.user_id, o.product_id, o.quantity, o.date, o.address, o.total, o.status
+        SELECT o.user_id, o.product_id, o.product_title, o.quantity, o.date, o.address, o.total, o.status
         FROM orders o
         WHERE o.order_id = ?
     ''', (order_id,))
@@ -361,7 +364,7 @@ def get_order_details(order_id: int) -> dict:
     conn.close()
 
     if len(order) > 0:
-        user_id, product_id, quantity, date, address, total, status = order[0]
+        user_id, product_id, product_title, quantity, date, address, total, status = order[0]
         order_dict = {
             "order_id": order_id,
             "user_id": user_id,
@@ -370,7 +373,8 @@ def get_order_details(order_id: int) -> dict:
             "date": date,
             "address": address,
             "total": total,
-            "status": status
+            "status": status,
+            "product_title": product_title
         }
         return order_dict
     else:

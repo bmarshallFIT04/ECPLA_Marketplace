@@ -361,6 +361,9 @@ textarea:focus {
     font-size: 13px;
 }
 
+.item-card {
+    margin-bottom: 40px;
+}
 
 /* #Bryan Bermudez- Remove buttons on the Account page sit under their form without the form card styling */
 .remove-saved {

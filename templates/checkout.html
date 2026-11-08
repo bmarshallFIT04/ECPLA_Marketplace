@@ -116,13 +116,23 @@ Checkout
 
     <h2>Order Summary</h2>
 
-    <p>
-        Subtotal: $19.99
-    </p>
+    {% if items %}
+        {% for item in items %}
+        <div class="item-card">
+            <p>Item: {{ item.title }}</p>
+            <p>Quantity: {{ item.quantity }}</p>
+            <p>Subtotal: ${{ "%.2f"|format(item.quantity * item.price) }}</p>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div>
+            <p>No items in cart.</p>
+        </div>
+    {% endif %}
 
-    <p>
-        Total: $19.99
-    </p>
+    <h3>
+        Total: ${{ "%.2f"|format(total_price) }}
+    </h3>
 
     <button type="submit">
         Place Order

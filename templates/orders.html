@@ -13,7 +13,7 @@ Order History
     <div class="order-card">
         <h2>Order #{{ order.order_id }}</h2>
         
-        <p>Item: {{ order.product_id }} CHANGE THIS TO PRODUCT NAME</p>
+        <p>Item: {{ order.product_title }} </p>
         <p>Quantity: {{ order.quantity }}</p>
         <p>Date: {{ order.date }}</p>
         <p>Total: ${{ "%.2f"|format(order.total) }}</p>

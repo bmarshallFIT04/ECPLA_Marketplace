@@ -11,7 +11,7 @@ from database import (
     delete_shipping_address, delete_payment_info,
     add_account, authenticate,
     is_blocked, get_conversation, list_conversations, list_blocked_users, send_message, delete_message, delete_conversation, block_user, unblock_user,
-    get_orders, get_order_details
+    get_orders, get_order_details, add_order
 )
 
 app = Flask(__name__)
@@ -120,6 +120,7 @@ def product(product_id):
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():
     user_id = session.get('user_id', DEFAULT_ID)
+    cart_items = get_cart_items(user_id)
 
     if request.method == "POST":
         # Only overwrite saved info when the buyer ticks "Save for future orders"
@@ -128,20 +129,35 @@ def checkout():
         if request.form.get("save_payment"):
             save_payment_info(user_id, request.form["card"], request.form["expiration"])
 
-        # Order placement logic will be added later
+        # Process each product as their own order
+        for item in cart_items:
+            product_id = item.get("product_id")
+            quantity = item.get("quantity")
 
+            # Use saved shipping info if it exists, otherwise use new info.
+            address = get_shipping_address(user_id)
+            if not address: address = {"full_name": request.form["name"], "address": request.form["address"]}
+
+            add_order(user_id, product_id, quantity, address)
         return redirect("/orders")
 
     return render_template(
         "checkout.html",
         shipping=get_shipping_address(user_id),
-        payment=get_payment_info(user_id)
+        payment=get_payment_info(user_id),
+        items=cart_items,
+        total_price=sum(
+            item["price"]*item["quantity"] for item in cart_items
+        )
     )
 
 
 @app.route("/orders")
 def orders():
     order_ids = get_orders(session.get('user_id', -1))
+
+    # Contains list of dictionaries, each containing the attributes of the corresponding orders from order_ids.
+    # Contains None if there are no orders
     order_details = [get_order_details(order) for order in order_ids] if order_ids else None
 
     return render_template(
