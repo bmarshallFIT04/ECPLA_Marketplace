@@ -10,7 +10,8 @@ from database import (
     add_to_cart, get_cart_items, update_cart_quantity, remove_from_cart, get_seller_cart_count,
     delete_shipping_address, delete_payment_info,
     add_account, authenticate,
-    is_blocked, get_conversation, list_conversations, list_blocked_users, send_message, delete_message, delete_conversation, block_user, unblock_user
+    is_blocked, get_conversation, list_conversations, list_blocked_users, send_message, delete_message, delete_conversation, block_user, unblock_user,
+    get_orders, get_order_details
 )
 
 app = Flask(__name__)
@@ -140,7 +141,13 @@ def checkout():
 
 @app.route("/orders")
 def orders():
-    return render_template("orders.html")
+    order_ids = get_orders(session.get('user_id', -1))
+    order_details = [get_order_details(order) for order in order_ids] if order_ids else None
+
+    return render_template(
+        "orders.html",
+        orders=order_details
+    )
 
 
 #Bryan Bermudez- Account page now shows the buyer's saved shipping and payment info
