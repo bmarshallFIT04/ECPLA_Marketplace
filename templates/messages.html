@@ -6,6 +6,9 @@ Messages
 
 {% block content %}
 
+<!-- The other user's username (falls back to their ID if they have no account) -->
+{% set other_name = other_user.username if other_user else 'User #' ~ other_id %}
+
 <h1>Messages</h1>
 
 <div class="messages-container">
@@ -29,7 +32,7 @@ Messages
         <a href="{{ url_for('conversation', other_id=convo.user_id) }}"
            class="conversation{% if convo.user_id == other_id %} active{% endif %}{% if convo.unread %} unread{% endif %}">
             <span class="conversation-name">
-                User #{{ convo.user_id }}
+                {{ convo.username or 'User #' ~ convo.user_id }}
                 {% if convo.unread %}
                 <span class="unread-badge">{{ convo.unread }}</span>
                 {% endif %}
@@ -56,7 +59,7 @@ Messages
         {% for blocked in blocked_users %}
         <div class="blocked-user">
             <span>
-                <strong>User #{{ blocked.user_id }}</strong>
+                <strong>{{ blocked.username or 'User #' ~ blocked.user_id }}</strong>
                 <span class="conversation-date">Blocked {{ blocked.blocked_at }}</span>
             </span>
             <form method="POST" action="{{ url_for('user_unblock', other_id=blocked.user_id) }}" class="delete-form">
@@ -70,14 +73,14 @@ Messages
 
         {% elif other_id and other_blocked %}
         <!-- This user is blocked, so their communication stays hidden -->
-        <h2>Conversation with User #{{ other_id }}</h2>
+        <h2>Conversation with {{ other_name }}</h2>
 
         {% if error %}
         <p class="form-error">{{ error }}</p>
         {% endif %}
 
         <p class="no-conversations">
-            You've blocked User #{{ other_id }}. Their messages are hidden and won't notify you.
+            You've blocked {{ other_name }}. Their messages are hidden and won't notify you.
         </p>
         <form method="POST" action="{{ url_for('user_unblock', other_id=other_id) }}" class="delete-form">
             <button type="submit">Unblock User</button>
@@ -87,13 +90,15 @@ Messages
 
         {% if other_id %}
         <div class="conversation-heading">
-            <h2>Conversation with User #{{ other_id }}</h2>
+            <h2>Conversation with {{ other_name }}</h2>
 
             <div class="conversation-actions">
                 <!-- Hides this user's communication; they can be unblocked from Blocked Users -->
+                <!-- The confirm text lives in data-confirm (safely HTML-escaped), so no template code sits inside JavaScript -->
                 <form method="POST" action="{{ url_for('user_block', other_id=other_id) }}"
                       class="delete-form"
-                      onsubmit="return confirm('Block User #{{ other_id }}? Their messages will be hidden and won\'t notify you.');">
+                      data-confirm="Block {{ other_name }}? Their messages will be hidden and won't notify you."
+                      onsubmit="return confirm(this.dataset.confirm);">
                     <button type="submit" class="delete-button">Block User</button>
                 </form>
 
@@ -101,7 +106,8 @@ Messages
                 {% if thread %}
                 <form method="POST" action="{{ url_for('conversation_delete', other_id=other_id) }}"
                       class="delete-form"
-                      onsubmit="return confirm('Delete this whole conversation? User #{{ other_id }} will still have their copy.');">
+                      data-confirm="Delete this whole conversation? {{ other_name }} will still have their copy."
+                      onsubmit="return confirm(this.dataset.confirm);">
                     <button type="submit" class="delete-button">Delete Conversation</button>
                 </form>
                 {% endif %}
@@ -116,9 +122,9 @@ Messages
                     <strong>{{ msg.subject }}</strong>
                     <span>
                         {% if msg.sent_by_me %}
-                        From: You &rarr; To: User #{{ msg.recipient_id }}
+                        From: You &rarr; To: {{ other_name }}
                         {% else %}
-                        From: User #{{ msg.sender_id }} &rarr; To: You
+                        From: {{ other_name }} &rarr; To: You
                         {% endif %}
                         &middot; {{ msg.sent_at }}
                     </span>
@@ -133,32 +139,38 @@ Messages
                 </form>
             </div>
             {% else %}
-            <p class="no-conversations">No messages with this user yet. Send the first one below.</p>
+            <p class="no-conversations">
+                No messages with this user yet.{% if can_send %} Send the first one below.{% endif %}
+            </p>
             {% endfor %}
         </div>
 
-        <h3>Reply</h3>
+        {% if can_send %}<h3>Reply</h3>{% endif %}
         {% else %}
         <h2>New Message</h2>
         {% endif %}
 
-        {% if error %}
+        {% if error and (can_send or error != cannot_send_reason) %}
         <p class="form-error">{{ error }}</p>
         {% endif %}
 
+        {% if not can_send %}
+        <!-- e.g. a seller can't start a conversation with a buyer who hasn't ordered from them -->
+        <p class="form-error">{{ cannot_send_reason }}</p>
+        {% else %}
         <form method="POST" action="{{ url_for('message_send') }}">
 
             {% if other_id %}
-            <input type="hidden" name="recipient_id" value="{{ other_id }}">
+            <input type="hidden" name="recipient" value="{{ other_user.username if other_user else '' }}">
             {% else %}
             <div>
-                <label for="recipient_id">To (User ID)</label>
+                <label for="recipient">To (Username)</label>
                 <input
-                    type="number"
-                    id="recipient_id"
-                    name="recipient_id"
-                    min="1"
-                    value="{{ form.recipient_id }}"
+                    type="text"
+                    id="recipient"
+                    name="recipient"
+                    value="{{ form.recipient }}"
+                    autocomplete="off"
                     required
                 >
             </div>
@@ -192,6 +204,7 @@ Messages
             </button>
 
         </form>
+        {% endif %}
 
         {% endif %}
 

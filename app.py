@@ -1,17 +1,25 @@
 import os
+from functools import wraps
 
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, abort
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, abort, flash
 
 from database import (
     #Bryan Bermudez- Imported delete functions for removing saved info
     init_db, add_product, remove_product, get_product, list_products, list_products_by_seller,
+    list_best_selling_products,
     get_product_tags, set_product_tags,
     save_shipping_address, get_shipping_address, save_payment_info, get_payment_info,
-    add_to_cart, get_cart_items, update_cart_quantity, remove_from_cart, get_seller_cart_count,
+    list_shipping_addresses, update_shipping_address, set_default_shipping_address,
+    list_payment_methods, set_default_payment, validate_card,
+    add_to_cart, get_cart_items, update_cart_quantity, remove_from_cart, get_seller_cart_count, clear_cart,
     delete_shipping_address, delete_payment_info,
-    add_account, authenticate,
+    add_account, authenticate, get_user, get_account,
     is_blocked, get_conversation, list_conversations, list_blocked_users, send_message, delete_message, delete_conversation, block_user, unblock_user,
-    get_orders, get_order_details, add_order
+    can_message,
+    get_orders, get_order_details, add_order, list_seller_buyers,
+    set_tracking_number, add_order_update, get_order_updates, list_seller_orders, get_seller_sales, ORDER_STATUSES,
+    MAX_TRACKING_NUMBER_LENGTH, MAX_ORDER_NOTE_LENGTH,
+    MIN_USERNAME_LENGTH, MAX_USERNAME_LENGTH, MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH
 )
 
 app = Flask(__name__)
@@ -28,23 +36,32 @@ def inject_current_user():
     return {
         "current_user_id": session.get('user_id', DEFAULT_ID),
         "current_username": session.get('username', DEFAULT_NAME),
-        "current_role": session.get('role', DEFAULT_ROLE)
+        "current_role": session.get('role', DEFAULT_ROLE),
+        # Only true for a logged-in seller account (logged-out visitors don't count as sellers)
+        "is_seller": is_seller()
     }
 
 
+def is_seller():
+    """Returns True if the logged-in account is a seller. Uses the role saved at login, not DEFAULT_ROLE."""
+    return session.get('role') == "seller"
 
-# TEMPORARY: switch which user you are, until real login is built. Remove this route once login exists.
-@app.route("/dev/login/<int:user_id>")
-def dev_login(user_id):
-    if user_id < 1:
-        abort(400)
-    session['user_id'] = user_id
-    return redirect(request.referrer or url_for('messages'))
+
+def login_required(view):
+    """Route decorator: sends logged-out visitors to the login page instead of using the placeholder user."""
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        return view(*args, **kwargs)
+    return wrapped
+
 
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    # "Featured from Local Sellers": the 4 best-selling products across all sellers
+    return render_template("index.html", featured=list_best_selling_products(4))
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -63,12 +80,20 @@ def register():
         if success:
             return redirect("/login")
         else:
-            # To-do: Incorporate message into website notification
-            print(message) # state reason for failure
-            return redirect("/register")
+            # Re-show the form with the reason (e.g. username taken), keeping the username and role
+            return render_register(error=message, username=username, role=role), 400
+
+    return render_register()
 
 
-    return render_template("register.html")
+def render_register(error=None, username="", role="buyer"):
+    """Renders the Create Account page, showing the same length limits that add_account() enforces."""
+    return render_template(
+        "register.html",
+        error=error, username=username, role=role,
+        min_username=MIN_USERNAME_LENGTH, max_username=MAX_USERNAME_LENGTH,
+        min_password=MIN_PASSWORD_LENGTH, max_password=MAX_PASSWORD_LENGTH
+    )
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -97,6 +122,13 @@ def login():
     return render_template("login.html")
 
 
+# Logs the current user out by forgetting their user ID, username, and role
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/")
+
+
 @app.route("/products")
 def products():
     # Shows every seller's products, not just the logged-in user's
@@ -117,39 +149,87 @@ def product(product_id):
 
 
 
+def render_checkout(user_id, cart_items, form=None, error=None):
+    """Renders checkout with the buyer's saved addresses and cards to choose from (default pre-selected).
+    Guests share the placeholder user ID, so they never see or save saved info."""
+    logged_in = 'user_id' in session
+    addresses = list_shipping_addresses(user_id) if logged_in else []
+    cards = list_payment_methods(user_id) if logged_in else []
+    if form is None:
+        form = {"shipping_choice": str(addresses[0]["id"]) if addresses else "new",
+                "payment_choice": str(cards[0]["id"]) if cards else "new",
+                "name": "", "address": "", "expiration": ""}
+    return render_template(
+        "checkout.html",
+        addresses=addresses,
+        cards=cards,
+        logged_in=logged_in,
+        form=form,
+        error=error,
+        items=cart_items,
+        total_price=sum(item["price"] * item["quantity"] for item in cart_items)
+    )
+
+
+def parse_id(value):
+    """Turns a form value into an int ID, or None if it isn't one."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():
     user_id = session.get('user_id', DEFAULT_ID)
     cart_items = get_cart_items(user_id)
 
     if request.method == "POST":
-        # Only overwrite saved info when the buyer ticks "Save for future orders"
-        if request.form.get("save_shipping"):
-            save_shipping_address(user_id, request.form["name"], request.form["address"])
-        if request.form.get("save_payment"):
-            save_payment_info(user_id, request.form["card"], request.form["expiration"])
+        logged_in = 'user_id' in session
+        # Card number and CVV are deliberately not kept in `form`, so they're never written back into the page
+        form = {key: request.form.get(key, "").strip()
+                for key in ("shipping_choice", "payment_choice", "name", "address", "expiration")}
 
-        # Process each product as their own order
+        def fail(message):
+            return render_checkout(user_id, cart_items, form=form, error=message), 400
+
+        if not cart_items:
+            return fail("Your cart is empty.")
+
+        # Shipping: one of the buyer's saved addresses, or a new one typed in (also used if no choice was sent)
+        if form["shipping_choice"] in ("", "new") or not logged_in:
+            if not form["name"] or not form["address"]:
+                return fail("Please enter a full name and shipping address.")
+            ship_to = {"full_name": form["name"], "address": form["address"]}
+            if logged_in and request.form.get("save_shipping"):
+                save_shipping_address(user_id, form["name"], form["address"])
+        else:
+            shipping_id = parse_id(form["shipping_choice"])
+            # Check the ID explicitly: get_shipping_address(user, None) would quietly return the default
+            ship_to = get_shipping_address(user_id, shipping_id) if shipping_id is not None else None
+            if ship_to is None:
+                return fail("Please choose a shipping address.")
+
+        # Payment: one of the buyer's saved cards, or a new one typed in. The CVV is always re-entered.
+        if form["payment_choice"] in ("", "new") or not logged_in:
+            card_number, card_error = validate_card(request.form.get("card", ""), form["expiration"])
+            if card_error:
+                return fail(card_error)
+            if logged_in and request.form.get("save_payment"):
+                save_payment_info(user_id, card_number, form["expiration"])
+        elif parse_id(form["payment_choice"]) is None or \
+                get_payment_info(user_id, parse_id(form["payment_choice"])) is None:
+            return fail("Please choose a card.")
+
+        # Process each product as its own order, shipped to the address the buyer chose
         for item in cart_items:
-            product_id = item.get("product_id")
-            quantity = item.get("quantity")
+            add_order(user_id, item["product_id"], item["quantity"], ship_to)
 
-            # Use saved shipping info if it exists, otherwise use new info.
-            address = get_shipping_address(user_id)
-            if not address: address = {"full_name": request.form["name"], "address": request.form["address"]}
-
-            add_order(user_id, product_id, quantity, address)
+        # The order has been placed, so empty the buyer's cart
+        clear_cart(user_id)
         return redirect("/orders")
 
-    return render_template(
-        "checkout.html",
-        shipping=get_shipping_address(user_id),
-        payment=get_payment_info(user_id),
-        items=cart_items,
-        total_price=sum(
-            item["price"]*item["quantity"] for item in cart_items
-        )
-    )
+    return render_checkout(user_id, cart_items)
 
 
 @app.route("/orders")
@@ -166,51 +246,154 @@ def orders():
     )
 
 
-#Bryan Bermudez- Account page now shows the buyer's saved shipping and payment info
-@app.route("/account")
-def account():
-    user_id = session.get('user_id', DEFAULT_ID)
+def get_viewable_order(order_id):
+    """Returns (order, viewer_is_seller) if the logged-in user is the order's buyer or the product's seller.
+    Anyone else gets a 404, so they can't tell which order IDs exist."""
+    user_id = session.get('user_id')
+    order = get_order_details(order_id)
+    if order is None:
+        abort(404)
+    viewer_is_seller = is_seller() and order["seller_id"] == user_id
+    if order["user_id"] != user_id and not viewer_is_seller:
+        abort(404)
+    return order, viewer_is_seller
+
+
+def render_order_detail(order_id, error=None):
+    order, viewer_is_seller = get_viewable_order(order_id)
     return render_template(
-        "account.html",
-        shipping=get_shipping_address(user_id),
-        payment=get_payment_info(user_id)
+        "order_detail.html",
+        order=order,
+        updates=get_order_updates(order_id),
+        viewer_is_seller=viewer_is_seller,
+        statuses=ORDER_STATUSES,
+        max_tracking=MAX_TRACKING_NUMBER_LENGTH,
+        max_note=MAX_ORDER_NOTE_LENGTH,
+        error=error
     )
 
 
-#Bryan Bermudez- Edit (or add) saved shipping address from the Account page
+# Order details: buyers see the tracking number and shipment updates; the seller can also edit them
+@app.route("/orders/<int:order_id>")
+def order_detail(order_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_order_detail(order_id)
+
+
+# Seller enters (or changes) the shipping/tracking number on an order
+@app.route("/orders/<int:order_id>/tracking", methods=["POST"])
+def order_set_tracking(order_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    get_viewable_order(order_id)  # 404 for anyone who isn't the buyer or seller
+    result = set_tracking_number(order_id, session['user_id'], request.form.get("tracking_number", ""))
+    if not result["success"]:
+        return render_order_detail(order_id, error=result["message"]), 400
+    flash(result["message"])
+    return redirect(url_for('order_detail', order_id=order_id))
+
+
+# Seller posts a shipment status update, e.g. "Out for delivery"
+@app.route("/orders/<int:order_id>/status", methods=["POST"])
+def order_add_update(order_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    get_viewable_order(order_id)  # 404 for anyone who isn't the buyer or seller
+    result = add_order_update(order_id, session['user_id'],
+                              request.form.get("status", ""), request.form.get("note", ""))
+    if not result["success"]:
+        return render_order_detail(order_id, error=result["message"]), 400
+    flash(result["message"])
+    return redirect(url_for('order_detail', order_id=order_id))
+
+
+#Bryan Bermudez- Account page now shows the buyer's saved shipping and payment info
+@app.route("/account")
+@login_required
+def account():
+    user_id = session['user_id']
+    return render_template(
+        "account.html",
+        addresses=list_shipping_addresses(user_id),
+        cards=list_payment_methods(user_id)
+    )
+
+
+def flash_result(result):
+    """Shows a database result's message on the next page, styled as success or error."""
+    flash(result["message"], "success" if result["success"] else "error")
+
+
+#Bryan Bermudez- Add a saved shipping address from the Account page
 @app.route("/account/shipping", methods=["POST"])
+@login_required
 def account_save_shipping():
-    user_id = session.get('user_id', DEFAULT_ID)
-    save_shipping_address(user_id, request.form["name"], request.form["address"])
+    flash_result(save_shipping_address(session['user_id'], request.form.get("name"), request.form.get("address")))
     return redirect("/account")
 
 
-#Bryan Bermudez- Remove saved shipping address from the Account page
-@app.route("/account/shipping/remove", methods=["POST"])
-def account_remove_shipping():
-    user_id = session.get('user_id', DEFAULT_ID)
-    delete_shipping_address(user_id)
+# Edit one saved shipping address
+@app.route("/account/shipping/<int:shipping_id>", methods=["POST"])
+@login_required
+def account_update_shipping(shipping_id):
+    flash_result(update_shipping_address(session['user_id'], shipping_id,
+                                         request.form.get("name"), request.form.get("address")))
     return redirect("/account")
 
 
-#Bryan Bermudez- Edit (or add) saved payment info from the Account page
+#Bryan Bermudez- Remove one saved shipping address from the Account page
+@app.route("/account/shipping/<int:shipping_id>/remove", methods=["POST"])
+@login_required
+def account_remove_shipping(shipping_id):
+    if delete_shipping_address(session['user_id'], shipping_id):
+        flash("Address removed.", "success")
+    return redirect("/account")
+
+
+# Make one saved shipping address the default for checkout
+@app.route("/account/shipping/<int:shipping_id>/default", methods=["POST"])
+@login_required
+def account_default_shipping(shipping_id):
+    if set_default_shipping_address(session['user_id'], shipping_id):
+        flash("Default address updated.", "success")
+    return redirect("/account")
+
+
+#Bryan Bermudez- Add a saved card from the Account page
 @app.route("/account/payment", methods=["POST"])
+@login_required
 def account_save_payment():
-    user_id = session.get('user_id', DEFAULT_ID)
-    save_payment_info(user_id, request.form["card"], request.form["expiration"])
+    flash_result(save_payment_info(session['user_id'], request.form.get("card"), request.form.get("expiration")))
     return redirect("/account")
 
 
-#Bryan Bermudez- Remove saved payment info from the Account page
-@app.route("/account/payment/remove", methods=["POST"])
-def account_remove_payment():
-    user_id = session.get('user_id', DEFAULT_ID)
-    delete_payment_info(user_id)
+#Bryan Bermudez- Remove one saved card from the Account page
+@app.route("/account/payment/<int:payment_id>/remove", methods=["POST"])
+@login_required
+def account_remove_payment(payment_id):
+    if delete_payment_info(session['user_id'], payment_id):
+        flash("Card removed.", "success")
+    return redirect("/account")
+
+
+# Make one saved card the default for checkout
+@app.route("/account/payment/<int:payment_id>/default", methods=["POST"])
+@login_required
+def account_default_payment(payment_id):
+    if set_default_payment(session['user_id'], payment_id):
+        flash("Default card updated.", "success")
     return redirect("/account")
 
 
 @app.route("/seller")
 def seller():
+    # Seller dashboard is only for seller accounts: send logged-out visitors to log in, refuse buyers
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    if not is_seller():
+        abort(403)
+
     seller_id = session.get('user_id', DEFAULT_ID)
 
     products = [
@@ -221,7 +404,17 @@ def seller():
     # Get total number of this seller's products sitting in active buyer carts
     total_in_carts = get_seller_cart_count(seller_id)
 
-    return render_template("seller.html", products=products, total_in_carts=total_in_carts)
+    # Buyers who have ordered from this seller; the seller can start a conversation with any of them
+    buyers = list_seller_buyers(seller_id)
+
+    # Orders placed for this seller's products, so they can add tracking numbers and status updates
+    seller_orders = list_seller_orders(seller_id)
+
+    # Seller Analytics: revenue, units sold, and order count from real orders
+    sales = get_seller_sales(seller_id)
+
+    return render_template("seller.html", products=products, total_in_carts=total_in_carts, buyers=buyers,
+                           seller_orders=seller_orders, sales=sales)
 
 
 def render_messages(user_id, other_id=None, error=None, form=None, show_blocked=False):
@@ -231,9 +424,12 @@ def render_messages(user_id, other_id=None, error=None, form=None, show_blocked=
     other_blocked = bool(other_id) and is_blocked(user_id, other_id)
     thread = get_conversation(user_id, other_id) if other_id and not other_blocked else None
 
+    # Whether the user may send to this person (e.g. sellers can only start conversations with their buyers)
+    permission = can_message(user_id, other_id) if other_id and not other_blocked else {"allowed": True, "message": ""}
+
     if form is None:
-        # Pre-fill the compose form, e.g. from a product page's "Message Seller" button
-        form = {"recipient_id": request.args.get("to", ""), "subject": request.args.get("subject", ""), "body": ""}
+        # Pre-fill the compose form, e.g. from a "Message Seller" button (?to=<username>&subject=...)
+        form = {"recipient": request.args.get("to", ""), "subject": request.args.get("subject", ""), "body": ""}
         # Replies default to "Re: <latest subject>", like email
         if thread:
             last_subject = thread[-1]["subject"]
@@ -243,7 +439,10 @@ def render_messages(user_id, other_id=None, error=None, form=None, show_blocked=
         "messages.html",
         conversations=list_conversations(user_id),
         other_id=other_id,
+        other_user=get_user(other_id) if other_id else None,
         other_blocked=other_blocked,
+        can_send=permission["allowed"],
+        cannot_send_reason=permission["message"],
         thread=thread,
         error=error,
         form=form,
@@ -272,15 +471,18 @@ def conversation(other_id):
 def message_send():
     user_id = session.get('user_id', DEFAULT_ID)
     form = {
-        "recipient_id": request.form.get("recipient_id", "").strip(),
+        "recipient": request.form.get("recipient", "").strip(),
         "subject": request.form.get("subject", ""),
         "body": request.form.get("body", "")
     }
 
-    try:
-        recipient_id = int(form["recipient_id"])
-    except ValueError:
-        return render_messages(user_id, error="Please enter a valid recipient user ID.", form=form), 400
+    # Messages are addressed by username; look up which account that is
+    recipient = get_account(form["recipient"])
+    if recipient is None:
+        error = f"No account found with the username \"{form['recipient']}\"." if form["recipient"] \
+            else "Please enter a recipient username."
+        return render_messages(user_id, error=error, form=form), 400
+    recipient_id = recipient["user_id"]
 
     result = send_message(user_id, recipient_id, form["subject"], form["body"])
     if not result["success"]:
@@ -360,6 +562,9 @@ def return_product():
 #Bryan Bermudez - Add product
 @app.route('/api/add-product', methods=['POST'])
 def handle_add_product():
+    if not is_seller():
+        return jsonify({"success": False, "message": "Only seller accounts can add products."}), 403
+
     seller_id = session.get('user_id', DEFAULT_ID)
 
     data = request.get_json()
@@ -389,6 +594,9 @@ def handle_add_product():
 # Add, edit, or remove a product's tags by sending its full new list of tags
 @app.route('/api/products/<int:product_id>/tags', methods=['POST'])
 def handle_set_tags(product_id):
+    if not is_seller():
+        return jsonify({"success": False, "message": "Only seller accounts can edit product tags."}), 403
+
     seller_id = session.get('user_id', DEFAULT_ID)
 
     tags = request.get_json().get('tags', [])

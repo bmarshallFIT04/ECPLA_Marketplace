@@ -22,14 +22,13 @@
             {{ product.description or "No description provided." }}
         </p>
 
-        <!-- Shows the seller's ID until accounts (and seller names) are implemented -->
         <p>
-            Seller: Seller #{{ product.seller_id }}
+            Seller: {{ product.seller_username or 'Seller #' ~ product.seller_id }}
         </p>
 
         <!-- Buyers can message the seller; the subject is pre-filled with the product name -->
         {% if product.seller_id != user_id %}
-        <a href="{{ url_for('messages', to=product.seller_id, subject='Question about ' ~ product.title) }}">
+        <a href="{{ url_for('conversation', other_id=product.seller_id, subject='Question about ' ~ product.title) }}">
             <button type="button">Message Seller</button>
         </a>
         {% endif %}

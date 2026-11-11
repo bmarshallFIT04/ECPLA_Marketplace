@@ -60,6 +60,11 @@ nav a:hover {
     color: #f2c894;
 }
 
+/* "Welcome: <username>" at the right end of the nav bar */
+.nav-welcome {
+    color: #f2c894;   
+}
+
 .logo {
     font-family: Georgia, serif;
     font-size: 23px;
@@ -261,6 +266,13 @@ section h2 {
     font-size: 14px;
 }
 
+/* "12 sold" on the home page's best sellers */
+.units-sold {
+    color: #2d5a27;
+    font-size: 14px;
+    font-weight: bold;
+}
+
 .seller-actions {
     display: flex;
     gap: 12px;
@@ -270,6 +282,17 @@ section h2 {
 
 .seller-actions button {
     margin-top: 0;
+}
+
+/* Rectangular seller dashboard buttons ("Add Product", "View Product Archive") */
+.seller-action-button {
+    background-color: #b56536;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 15px;
 }
 
 
@@ -561,6 +584,101 @@ textarea:focus {
     font-weight: bold;
 }
 
+.form-success {
+    color: #2d5a27;
+    font-weight: bold;
+}
+
+/* Seller Dashboard: all orders for the seller's products, as a table */
+.table-wrapper {
+    overflow-x: auto;
+    margin-bottom: 25px;
+
+    background-color: #fffdf9;
+    border: 1px solid #d7c9b8;
+    border-radius: 12px;
+}
+
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+.orders-table th,
+.orders-table td {
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid #eee4d5;
+    white-space: nowrap;
+}
+
+.orders-table th {
+    background-color: #f4ece2;
+    color: #4f4438;
+    font-weight: bold;
+}
+
+.orders-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.orders-table tbody tr:hover {
+    background-color: #fbf6f0;
+}
+
+/* Money lines up on the right */
+.orders-table .numeric {
+    text-align: right;
+}
+
+.orders-table a {
+    color: #c06c48;
+    font-weight: bold;
+}
+
+/* Label for screen readers only (e.g. the Actions column header) */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* Order tracking: shipment status history, newest at the top */
+.order-timeline {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+
+.order-timeline li {
+    border-left: 3px solid #d7c9b8;
+    padding: 4px 0 14px 16px;
+    color: #6b5e52;
+}
+
+/* The latest status stands out */
+.order-timeline li.current {
+    border-left-color: #c06c48;
+    color: #4f4438;
+}
+
+.order-timeline .conversation-date {
+    display: block;
+}
+
+.order-note {
+    margin: 6px 0 0;
+}
+
+.tracking-number {
+    font-family: monospace;
+    letter-spacing: 0.5px;
+}
+
 .message-history {
     min-height: 120px;
 
@@ -663,6 +781,130 @@ textarea:focus {
     font-size: 12px;
 }
 
+/* Account page: saved shipping address and card, shown as a list */
+.saved-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 12px;
+    max-width: 520px;
+}
+
+.saved-item {
+    background-color: #fffdf9;
+    border: 1px solid #d7c9b8;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+}
+
+.saved-item-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: #4f4438;
+}
+
+.saved-item .delete-button-small {
+    margin-top: 0;
+}
+
+/* Details on the left, Make Default / Remove on the right */
+.saved-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+
+.saved-item-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* The per-address Edit toggle sits inside the list item */
+.saved-item .saved-edit {
+    margin: 8px 0 0;
+}
+
+.saved-item .saved-edit summary {
+    margin-bottom: 0;
+    font-size: 14px;
+}
+
+.saved-item .saved-edit form {
+    margin-top: 12px;
+    padding: 0;
+    box-shadow: none;
+}
+
+.default-badge {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+
+    background-color: #cfe1d7;
+    color: #2d5a27;
+    border-radius: 10px;
+
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Checkout: pick a saved address/card or "Use a new ..." */
+.choice-list {
+    margin-bottom: 14px;
+}
+
+.choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+
+    border: 1px solid #d7c9b8;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.choice input {
+    width: auto;
+    margin-top: 3px;
+}
+
+.choice:has(input:checked) {
+    border-color: #c06c48;
+    background-color: #fbf1ea;
+}
+
+.saved-empty {
+    color: #7b6a58;
+    font-style: italic;
+}
+
+/* "Edit Address" / "Add Card" toggles that reveal the form */
+.saved-edit {
+    margin-bottom: 25px;
+}
+
+.saved-edit summary {
+    cursor: pointer;
+    color: #c06c48;
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
+/* Requirement notes under form fields (e.g. password length on Create Account) */
+.form-hint {
+    margin: 4px 0 0;
+
+    font-size: 13px;
+    color: #6b5e52;
+}
+
 /* Keep the line breaks the sender typed */
 .message-body {
     white-space: pre-wrap;
@@ -675,13 +917,6 @@ textarea:focus {
 .sent {
     background-color: #cfe1d7;
     margin-left: auto;
-}
-
-
-/* TEMPORARY: user switcher in the nav bar, for testing until real login is built */
-.dev-user-switch {
-    font-size: 13px;
-    opacity: 0.85;
 }
 
 

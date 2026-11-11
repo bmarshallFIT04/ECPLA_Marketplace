@@ -8,110 +8,103 @@ Checkout
 
 <h1>Checkout</h1>
 
+{% if error %}
+<p class="form-error">{{ error }}</p>
+{% endif %}
+
 <form method="POST">
 
     <h2>Shipping Information</h2>
 
-    <!-- Shown only when the buyer has a saved address; the fields below are auto-filled with it -->
-    {% if shipping %}
-    <p class="saved-note">
-        Filled in from your saved address.
-        <button type="button" class="clear-saved" data-fields="name,address">
-            Use a Different Address
-        </button>
-    </p>
-    {% endif %}
-
-    <div>
-        <label for="name">
-            Full Name
+    <!-- Pick one of the buyer's saved addresses (default pre-selected), or enter a new one -->
+    <div class="choice-list">
+        {% for item in addresses %}
+        <label class="choice">
+            <input type="radio" name="shipping_choice" value="{{ item.id }}"
+                   {% if form.shipping_choice == item.id|string %}checked{% endif %}>
+            <span>
+                <strong>{{ item.full_name }}</strong>
+                {% if item.is_default %}<span class="default-badge">Default</span>{% endif %}
+                <br>{{ item.address }}
+            </span>
         </label>
+        {% endfor %}
 
-        <input
-            type="text"
-            id="name"
-            name="name"
-            value="{{ shipping.full_name if shipping }}"
-            required
-        >
+        <label class="choice" {% if not addresses %}hidden{% endif %}>
+            <input type="radio" name="shipping_choice" value="new"
+                   {% if form.shipping_choice == 'new' %}checked{% endif %}>
+            <span><strong>Use a new address</strong></span>
+        </label>
     </div>
 
-    <div>
-        <label for="address">
-            Shipping Address
-        </label>
+    <!-- Only shown while "Use a new address" is selected -->
+    <div class="new-entry" data-choice="shipping_choice">
+        <div>
+            <label for="name">Full Name</label>
+            <input type="text" id="name" name="name" value="{{ form.name }}">
+        </div>
 
-        <input
-            type="text"
-            id="address"
-            name="address"
-            value="{{ shipping.address if shipping }}"
-            required
-        >
-    </div>
+        <div>
+            <label for="address">Shipping Address</label>
+            <input type="text" id="address" name="address" value="{{ form.address }}">
+        </div>
 
-    <div class="save-option">
-        <input type="checkbox" id="save_shipping" name="save_shipping" value="1">
-        <label for="save_shipping">Save this address for future orders</label>
+        {% if logged_in %}
+        <div class="save-option">
+            <input type="checkbox" id="save_shipping" name="save_shipping" value="1">
+            <label for="save_shipping">Save this address for future orders</label>
+        </div>
+        {% endif %}
     </div>
 
     <h2>Payment Information</h2>
 
-    <!-- Shown only when the buyer has a saved card; the CVV is never saved, so it is always re-entered -->
-    {% if payment %}
-    <p class="saved-note">
-        Filled in from your saved card. Please re-enter your CVV.
-        <button type="button" class="clear-saved" data-fields="card,expiration">
-            Use a Different Card
-        </button>
-    </p>
-    {% endif %}
-
-    <div>
-        <label for="card">
-            Card Number
+    <!-- Pick one of the buyer's saved cards (shown masked), or enter a new one -->
+    <div class="choice-list">
+        {% for card in cards %}
+        <label class="choice">
+            <input type="radio" name="payment_choice" value="{{ card.id }}"
+                   {% if form.payment_choice == card.id|string %}checked{% endif %}>
+            <span>
+                <strong>Card ending in {{ card.last4 }}</strong>
+                {% if card.is_default %}<span class="default-badge">Default</span>{% endif %}
+                <br>Expires {{ card.expiration }}
+            </span>
         </label>
+        {% endfor %}
 
-        <input
-            type="text"
-            id="card"
-            name="card"
-            value="{{ payment.card_number if payment }}"
-            required
-        >
+        <label class="choice" {% if not cards %}hidden{% endif %}>
+            <input type="radio" name="payment_choice" value="new"
+                   {% if form.payment_choice == 'new' %}checked{% endif %}>
+            <span><strong>Use a new card</strong></span>
+        </label>
     </div>
 
-    <div>
-        <label for="expiration">
-            Expiration Date
-        </label>
+    <!-- Only shown while "Use a new card" is selected -->
+    <div class="new-entry" data-choice="payment_choice">
+        <div>
+            <label for="card">Card Number</label>
+            <input type="text" id="card" name="card" inputmode="numeric" autocomplete="cc-number">
+        </div>
 
-        <input
-            type="text"
-            id="expiration"
-            name="expiration"
-            placeholder="MM/YY"
-            value="{{ payment.expiration if payment }}"
-            required
-        >
+        <div>
+            <label for="expiration">Expiration Date</label>
+            <input type="text" id="expiration" name="expiration" placeholder="MM/YY"
+                   autocomplete="cc-exp" value="{{ form.expiration }}">
+        </div>
+
+        {% if logged_in %}
+        <div class="save-option">
+            <input type="checkbox" id="save_payment" name="save_payment" value="1">
+            <label for="save_payment">Save this card for future orders</label>
+        </div>
+        {% endif %}
     </div>
 
+    <!-- The CVV is never saved, so it's entered for every order -->
     <div>
-        <label for="cvv">
-            CVV
-        </label>
-
-        <input
-            type="text"
-            id="cvv"
-            name="cvv"
-            required
-        >
-    </div>
-
-    <div class="save-option">
-        <input type="checkbox" id="save_payment" name="save_payment" value="1">
-        <label for="save_payment">Save this card for future orders</label>
+        <label for="cvv">CVV</label>
+        <input type="text" id="cvv" name="cvv" inputmode="numeric" autocomplete="cc-csc" required>
     </div>
 
     <h2>Order Summary</h2>
@@ -141,15 +134,18 @@ Checkout
 </form>
 
 <script>
-    // Clears auto-filled fields so the buyer can enter a different address or card
-    document.querySelectorAll('.clear-saved').forEach((button) => {
-        button.addEventListener('click', () => {
-            const fieldIds = button.dataset.fields.split(',');
-            fieldIds.forEach((id) => {
-                document.getElementById(id).value = '';
-            });
-            document.getElementById(fieldIds[0]).focus();
-        });
+    // Shows the "new address" / "new card" fields only while that option is selected,
+    // and makes them required only then (so a saved choice can be submitted without them)
+    document.querySelectorAll('.new-entry').forEach((section) => {
+        const radios = document.querySelectorAll(`input[name="${section.dataset.choice}"]`);
+        const update = () => {
+            const checked = document.querySelector(`input[name="${section.dataset.choice}"]:checked`);
+            const usingNew = !checked || checked.value === 'new';
+            section.hidden = !usingNew;
+            section.querySelectorAll('input[type="text"]').forEach((input) => { input.required = usingNew; });
+        };
+        radios.forEach((radio) => radio.addEventListener('change', update));
+        update();
     });
 </script>
 
