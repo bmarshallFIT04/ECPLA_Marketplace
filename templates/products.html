@@ -16,6 +16,7 @@ Products
             type="text"
             name="search"
             placeholder="Search products..."
+            value="{{ search or '' }}"
         >
 
         <button type="submit">
@@ -104,7 +105,12 @@ Products
 
     </div>
     {% else %}
+    {# Bryan Bermudez- Message when a keyword search finds nothing #}
+    {% if search %}
+    <p>No products match "{{ search }}".</p>
+    {% else %}
     <p>No products are available yet.</p>
+    {% endif %}
     {% endfor %}
 
 </div>

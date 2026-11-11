@@ -8,7 +8,13 @@ from database import (
     delete_shipping_address, delete_payment_info,
     add_to_cart, get_cart_items, update_cart_quantity, remove_from_cart, get_seller_cart_count
 )
+#Bryan Bermudez- Imported product edit, delete and search modules
+from product_manage_db import search_products
+from product_manage_routes import product_manage
+
 app = Flask(__name__)
+#Bryan Bermudez- Edit and delete product routes
+app.register_blueprint(product_manage)
 
 
 @app.route("/")
@@ -29,12 +35,14 @@ def login():
 @app.route("/products")
 def products():
     # Shows every seller's products, not just the logged-in user's
+    #Bryan Bermudez- Search products by keyword
+    search = request.args.get("search", "").strip()
     all_products = [
         {"id": p[0], "seller_id": p[1], "title": p[2], "price": p[3], "stock": p[4],
          "description": p[5], "tags": get_product_tags(p[0])}
-        for p in list_products()
+        for p in search_products(search)
     ]
-    return render_template("products.html", products=all_products)
+    return render_template("products.html", products=all_products, search=search)
 
 
 @app.route("/product/<int:product_id>")
@@ -122,7 +130,7 @@ def seller():
     seller_id = session.get('user_id', 1)
 
     products = [
-        {"id": p[0], "title": p[1], "price": p[3], "stock": p[4], "tags": get_product_tags(p[0])}
+        {"id": p[0], "title": p[1], "description": p[2], "price": p[3], "stock": p[4], "tags": get_product_tags(p[0])}
         for p in list_products_by_seller(seller_id)
     ]
 

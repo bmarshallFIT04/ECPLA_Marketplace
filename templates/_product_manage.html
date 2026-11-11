@@ -1,0 +1,22 @@
+{# Bryan Bermudez- Seller controls for one product card: Edit and Delete buttons plus a hidden edit form.
+   Expects `product` from the seller page. Behaviour lives in static/product_manage.js. #}
+<button type="button" class="edit-btn" data-product-id="{{ product.id }}">Edit</button>
+<button type="button" class="delete-btn" data-product-id="{{ product.id }}">Delete</button>
+
+<form class="edit-form" data-product-id="{{ product.id }}" hidden>
+    <label for="edit-title-{{ product.id }}">Title</label>
+    <input type="text" id="edit-title-{{ product.id }}" name="title" value="{{ product.title }}" required>
+
+    <label for="edit-desc-{{ product.id }}">Description</label>
+    <textarea id="edit-desc-{{ product.id }}" name="description">{{ product.description or "" }}</textarea>
+
+    <label for="edit-price-{{ product.id }}">Price ($)</label>
+    <input type="number" id="edit-price-{{ product.id }}" name="price" step="0.01" min="0.01" value="{{ '%.2f'|format(product.price) }}" required>
+
+    <label for="edit-stock-{{ product.id }}">Stock</label>
+    <input type="number" id="edit-stock-{{ product.id }}" name="stock_quantity" min="0" value="{{ product.stock }}" required>
+
+    <p class="edit-error" style="color: #b00020;" hidden></p>
+    <button type="submit">Save Changes</button>
+    <button type="button" class="edit-cancel">Cancel</button>
+</form>

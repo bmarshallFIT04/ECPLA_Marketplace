@@ -62,9 +62,9 @@ Seller Dashboard
         {% for product in products %}
         <div class="product-card">
             <div class="product-card-content">
-                <h3>{{ product.title }}</h3>
-                <p>Price: ${{ "%.2f"|format(product.price) }}</p>
-                <p>Stock: {{ product.stock }}</p>
+                <h3 class="p-title">{{ product.title }}</h3>
+                <p class="p-price">Price: ${{ "%.2f"|format(product.price) }}</p>
+                <p class="p-stock">Stock: {{ product.stock }}</p>
                 <p>Status: On Sale</p>
 
                 <!-- Product tags: click × to remove one, or edit the full list below -->
@@ -85,10 +85,10 @@ Seller Dashboard
                     <button type="submit">Save Tags</button>
                 </form>
 
-                <button>Edit</button>
+                {# Bryan Bermudez- Edit and Delete buttons #}
+                {% include "_product_manage.html" %}
                 <button>Toggle Sale Status</button>
                 <button>Archive</button>
-                <button>Delete</button>
             </div>
         </div>
         {% else %}
@@ -221,5 +221,7 @@ Seller Dashboard
         });
     });
 </script>
+<!-- Bryan Bermudez- Edit and delete products -->
+<script src="{{ url_for('static', filename='product_manage.js') }}"></script>
 
 {% endblock %}
