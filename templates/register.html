@@ -8,6 +8,11 @@ Create Account
 
 <h1>Create an Account</h1>
 
+<!-- Why signup failed, e.g. the username is already taken -->
+{% if error %}
+<p class="form-error">{{ error }}</p>
+{% endif %}
+
 <form method="POST">
 
     <div>
@@ -16,8 +21,16 @@ Create Account
             type="text"
             id="username"
             name="username"
+            value="{{ username }}"
+            minlength="{{ min_username }}"
+            maxlength="{{ max_username }}"
+            aria-describedby="username-requirements"
             required
         >
+        <p id="username-requirements" class="form-hint">
+            Must be {{ min_username }}&ndash;{{ max_username }} characters and not already taken
+            (capitalization doesn't count, so "Seller1" and "seller1" are the same name).
+        </p>
     </div>
 
     <div>
@@ -26,16 +39,22 @@ Create Account
             type="password"
             id="password"
             name="password"
+            minlength="{{ min_password }}"
+            maxlength="{{ max_password }}"
+            aria-describedby="password-requirements"
             required
         >
+        <p id="password-requirements" class="form-hint">
+            Must be {{ min_password }}&ndash;{{ max_password }} characters.
+        </p>
     </div>
 
     <div>
         <label for="role">Account Type</label>
 
         <select id="role" name="role" required>
-            <option value="buyer">Buyer</option>
-            <option value="seller">Seller</option>
+            <option value="buyer" {% if role == 'buyer' %}selected{% endif %}>Buyer</option>
+            <option value="seller" {% if role == 'seller' %}selected{% endif %}>Seller</option>
         </select>
     </div>
 

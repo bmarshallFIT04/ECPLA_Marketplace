@@ -28,9 +28,22 @@ def check(description, passed):
 
 
 def as_seller(seller_id):
-    """Makes the test browser act as the given seller."""
+    """Makes the test browser act as the given logged-in seller."""
     with client.session_transaction() as session:
         session["user_id"] = seller_id
+        session["role"] = "seller"
+
+
+def as_buyer(user_id=9):
+    """Makes the test browser act as a logged-in buyer."""
+    with client.session_transaction() as session:
+        session["user_id"] = user_id
+        session["role"] = "buyer"
+
+
+def logged_out():
+    with client.session_transaction() as session:
+        session.clear()
 
 
 def edit(pid, title="Big Mug", description="new text", price="14", stock="7"):
@@ -73,6 +86,11 @@ check("A different seller cannot edit it", edit(mug, title="Hacked").status_code
 check("...and the product is unchanged", database.get_product(mug)["title"] == "Big Mug")
 as_seller(1)
 check("Editing a product that does not exist is refused", edit(9999).status_code == 404)
+as_buyer()
+check("A buyer account cannot edit products", edit(mug, title="Hacked").status_code == 403)
+logged_out()
+check("A logged-out visitor cannot edit products", edit(mug, title="Hacked").status_code == 403)
+as_seller(1)
 
 print("\nSTORY 2: DELETE A PRODUCT")
 scarf = ids["Wool Scarf"]
@@ -90,6 +108,11 @@ check("Its page now shows 404 (not found)", client.get(f"/product/{scarf}").stat
 check("It no longer appears in the product list", "Wool Scarf" not in page("/products"))
 check("It was removed from buyers' carts", database.get_cart_items(5) == [])
 check("Deleting it a second time is refused", client.delete(f"/api/products/{scarf}").status_code == 404)
+as_buyer()
+check("A buyer account cannot delete products", client.delete(f"/api/products/{mug}").status_code == 403)
+logged_out()
+check("A logged-out visitor cannot delete products", client.delete(f"/api/products/{mug}").status_code == 403)
+as_seller(1)
 
 print("\nSTORY 3: SEARCH BY KEYWORD")
 database.add_product(1, "Wool Scarf", "warm and handmade", 28.50, 3)   # put the scarf back for searching

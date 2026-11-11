@@ -29,8 +29,22 @@
             <a href="/cart">Cart</a>
             <a href="/orders">Orders</a>
             <a href="/messages">Messages</a>
+
+            <!-- Seller Dashboard is only for logged-in seller accounts -->
+            {% if is_seller %}
+            <a href="{{ url_for('seller') }}">Seller Dashboard</a>
+            {% endif %}
+            <!-- Account page is only for logged-in users -->
+            {% if session.get('username') %}
             <a href="/account">Account</a>
+            {% endif %}
+            {# Logged-in users get Logout and a welcome message (not the "SampleUser" placeholder) #}
+            {% if session.get('username') %}
+            <a href="{{ url_for('logout') }}">Logout</a>
+            <span class="nav-welcome">Welcome: {{ session['username'] }}</span>
+            {% else %}
             <a href="/login">Login</a>
+            {% endif %}
         </div>
     </nav>
 

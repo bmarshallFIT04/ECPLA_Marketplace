@@ -16,10 +16,10 @@ Seller Dashboard
 
     <div class="seller-actions">
         <!-- Replaced anchor link with an interactive button to trigger the form popup -->
-        <button id="toggleFormBtn" class="btn" style="background-color: #b56536; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-bottom: 15px;">
+        <button id="toggleFormBtn" class="btn seller-action-button">
             Add Product
         </button>
-        <a href="/archive"><button>View Product Archive</button></a>
+        <a href="/archive"><button type="button" class="seller-action-button">View Product Archive</button></a>
     </div>
 
     <!-- Hidden form container that pops up when the Add Product button is clicked -->
@@ -97,12 +97,76 @@ Seller Dashboard
     </div>
 </section>
 
+<!-- Orders placed for this seller's products; open one to add a tracking number or status update -->
+<section class="seller-section">
+    <h2>Orders</h2>
+
+    {% if seller_orders %}
+    <!-- Wrapper scrolls sideways on narrow screens instead of squashing the table -->
+    <div class="table-wrapper">
+        <table class="orders-table">
+            <thead>
+                <tr>
+                    <th scope="col">Order #</th>
+                    <th scope="col">Product</th>
+                    <th scope="col">Buyer</th>
+                    <th scope="col">Order Date</th>
+                    <th scope="col" class="numeric">Paid</th>
+                    <th scope="col">Shipment Status</th>
+                    <th scope="col">Tracking Number</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in seller_orders %}
+                <tr>
+                    <td>{{ order.order_id }}</td>
+                    <td>{{ order.product_title }} &times; {{ order.quantity }}</td>
+                    <!-- Orders placed without an account are guest orders -->
+                    <td>{{ order.buyer_username or "Guest" }}</td>
+                    <td>{{ order.date }}</td>
+                    <td class="numeric">${{ "%.2f"|format(order.total) }}</td>
+                    <td>{{ order.status }}</td>
+                    <td>{{ order.tracking_number or "Not added yet" }}</td>
+                    <td>
+                        <a href="{{ url_for('order_detail', order_id=order.order_id) }}">View / Update</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>No orders yet.</p>
+    {% endif %}
+</section>
+
+<!-- Buyers who have ordered from this seller; sellers can only start conversations with these buyers -->
+<section class="seller-section">
+    <h2>My Buyers</h2>
+
+    {% for buyer in buyers %}
+    <div class="order-card">
+        <h3>{{ buyer.username }} (User #{{ buyer.user_id }})</h3>
+        <p>Orders: {{ buyer.order_count }}</p>
+        <p>Latest Order: {{ buyer.last_order_date }}</p>
+        <a href="{{ url_for('conversation', other_id=buyer.user_id, subject='Thank you for your order!') }}">
+            <button type="button">Message Buyer</button>
+        </a>
+    </div>
+    {% else %}
+    <p>No one has ordered your products yet.</p>
+    {% endfor %}
+</section>
+
 <section>
     <h2>Seller Analytics</h2>
+    <!-- Calculated from every order placed for this seller's products -->
     <p>Total Items in Buyer Carts: {{ total_in_carts }}</p>
-    <p>Revenue: $0.00</p>
-    <p>Products Sold: 0</p>
-    <p>Products Returned: 0</p>
+    <p>Revenue: ${{ "%.2f"|format(sales.revenue) }}</p>
+    <p>Products Sold: {{ sales.units_sold }} (across {{ sales.order_count }} order{{ "" if sales.order_count == 1 else "s" }})</p>
+    <!-- Returns aren't saved to the database yet (the Return form doesn't store anything) -->
+    <p>Products Returned: Not tracked yet</p>
 </section>
 
 <!-- ========================================================================= -->
@@ -123,7 +187,7 @@ Seller Dashboard
                 } else {
                     formContainer.style.display = 'none';
                     toggleBtn.textContent = 'Add Product';
-                    toggleBtn.style.backgroundColor = '#b56536';
+                    toggleBtn.style.backgroundColor = '';  // back to the .seller-action-button color
                 }
             });
         }

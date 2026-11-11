@@ -8,18 +8,39 @@ Order History
 
 <h1>Order History</h1>
 
-<div class="order-card">
+{% if orders %}
+    {% for order in orders %}
+    <div class="order-card">
+        <h2>Order #{{ order.order_id }}</h2>
+        
+        <p>Item: {{ order.product_title }} </p>
+        <p>Quantity: {{ order.quantity }}</p>
+        <p>Date: {{ order.date }}</p>
+        <p>Total: ${{ "%.2f"|format(order.total) }}</p>
+        <p>Status: {{ order.status }}</p>
+        {% if order.tracking_number %}
+        <p>Tracking Number: {{ order.tracking_number }}</p>
+        {% endif %}
 
-    <h2>Order #1001</h2>
+        <!-- Full tracking number and shipment status history -->
+        <a href="{{ url_for('order_detail', order_id=order.order_id) }}">
+            <button type="button">View Details</button>
+        </a>
 
-    <p>Date: October 19, 2026</p>
-    <p>Total: $19.99</p>
-    <p>Status: Delivered</p>
+        <a href="/return">
+            <button>Return Product</button>
+        </a>
 
-    <a href="/return">
-        <button>Return Product</button>
-    </a>
-
-</div>
+        <!-- Buyers can message the seller about this order (hidden if the product was removed) -->
+        {% if order.seller_id and order.seller_id != current_user_id %}
+        <a href="{{ url_for('conversation', other_id=order.seller_id, subject='Question about Order #' ~ order.order_id ~ ' (' ~ order.product_title ~ ')') }}">
+            <button type="button">Message Seller</button>
+        </a>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+    <p>No past orders.</p>
+{% endif %}
 
 {% endblock %}

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}
+Order #{{ order.order_id }}
+{% endblock %}
+
+{% block content %}
+
+<h1>Order #{{ order.order_id }}</h1>
+
+<p>
+    {% if viewer_is_seller %}
+    <a href="{{ url_for('seller') }}">&larr; Back to Seller Dashboard</a>
+    {% else %}
+    <a href="{{ url_for('orders') }}">&larr; Back to Order History</a>
+    {% endif %}
+</p>
+
+<!-- Confirmation after the seller saves a tracking number or status update -->
+{% for message in get_flashed_messages() %}
+<p class="form-success">{{ message }}</p>
+{% endfor %}
+
+{% if error %}
+<p class="form-error">{{ error }}</p>
+{% endif %}
+
+<div class="order-card">
+    <h2>Order Details</h2>
+    {% if viewer_is_seller %}
+    <!-- Orders placed without an account are guest orders -->
+    <p>Buyer: {{ order.buyer_username or "Guest" }}</p>
+    {% endif %}
+    <p>Item: {{ order.product_title }}</p>
+    <p>Quantity: {{ order.quantity }}</p>
+    <p>Ordered: {{ order.date }}</p>
+    <p>Total: ${{ "%.2f"|format(order.total) }}</p>
+    <p>Ship to: {{ order.full_name }}, {{ order.address }}</p>
+    <p>Current Status: <strong>{{ order.status }}</strong></p>
+    <p>
+        Tracking Number:
+        {% if order.tracking_number %}
+        <strong class="tracking-number">{{ order.tracking_number }}</strong>
+        {% else %}
+        <em>Not available yet</em>
+        {% endif %}
+    </p>
+</div>
+
+<!-- Shipment status history, newest first -->
+<div class="order-card">
+    <h2>Shipment Updates</h2>
+    <ol class="order-timeline">
+        {% for update in updates %}
+        <li class="{{ 'current' if loop.first else '' }}">
+            <strong>{{ update.status }}</strong>
+            <span class="conversation-date">{{ update.created_at }}</span>
+            {% if update.note %}
+            <p class="order-note">{{ update.note }}</p>
+            {% endif %}
+        </li>
+        {% else %}
+        <!-- Orders placed before tracking existed have no history rows yet -->
+        <li class="current">
+            <strong>{{ order.status }}</strong>
+            <span class="conversation-date">{{ order.date }}</span>
+        </li>
+        {% endfor %}
+    </ol>
+</div>
+
+{% if viewer_is_seller %}
+<!-- Seller-only: enter tracking info and post shipment updates for the buyer to see -->
+<h2>Update Shipping</h2>
+
+<form method="POST" action="{{ url_for('order_set_tracking', order_id=order.order_id) }}">
+    <div>
+        <label for="tracking_number">Shipping / Tracking Number</label>
+        <input
+            type="text"
+            id="tracking_number"
+            name="tracking_number"
+            maxlength="{{ max_tracking }}"
+            value="{{ order.tracking_number or '' }}"
+            placeholder="e.g. 1Z999AA10123456784"
+            aria-describedby="tracking-hint"
+        >
+        <p id="tracking-hint" class="form-hint">Leave blank and save to remove the tracking number.</p>
+    </div>
+    <button type="submit">Save Tracking Number</button>
+</form>
+
+<form method="POST" action="{{ url_for('order_add_update', order_id=order.order_id) }}">
+    <div>
+        <label for="status">New Status</label>
+        <select id="status" name="status" required>
+            {% for status in statuses %}
+            <option value="{{ status }}" {% if status == order.status %}selected{% endif %}>{{ status }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="note">Note for the buyer (optional)</label>
+        <textarea
+            id="note"
+            name="note"
+            rows="3"
+            maxlength="{{ max_note }}"
+            placeholder="e.g. Delayed by weather, now expected Friday"
+        ></textarea>
+    </div>
+    <button type="submit">Post Status Update</button>
+</form>
+{% endif %}
+
+{% endblock %}

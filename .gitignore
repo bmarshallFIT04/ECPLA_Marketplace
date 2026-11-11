@@ -17,3 +17,6 @@ __pycache__/
 # Flask
 instance/
 .webassets-cache
+
+# SQLite
+instance/marketplace.db

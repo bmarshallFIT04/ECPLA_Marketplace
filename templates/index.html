@@ -25,81 +25,46 @@ Home
 
     <h2>Featured from Local Sellers</h2>
 
+    <!-- The 4 best-selling products across all sellers (topped up with new products if few have sold) -->
     <div class="product-grid">
 
+        {% for product in featured %}
         <div class="product-card">
 
             <div class="product-card-content">
 
-                <h3>Handmade Ceramic Mug</h3>
+                <h3>{{ product.title }}</h3>
 
                 <p class="seller-name">
-                    Made by Sample Artisan
+                    Made by {{ product.seller_username or "a local seller" }}
                 </p>
 
-                <p>
-                    A handcrafted ceramic mug made locally.
-                </p>
+                {% if product.description %}
+                <p>{{ product.description }}</p>
+                {% endif %}
 
                 <p class="product-price">
-                    $24.99
+                    ${{ "%.2f"|format(product.price) }}
                 </p>
 
-                <button>View Product</button>
+                {% if product.units_sold %}
+                <p class="units-sold">{{ product.units_sold }} sold</p>
+                {% endif %}
+
+                {% if product.stock == 0 %}
+                <p class="out-of-stock">Out of stock</p>
+                {% endif %}
+
+                <a href="{{ url_for('product', product_id=product.id) }}">
+                    <button type="button">View Product</button>
+                </a>
 
             </div>
 
         </div>
-
-
-        <div class="product-card">
-
-            <div class="product-card-content">
-
-                <h3>Handcrafted Bracelet</h3>
-
-                <p class="seller-name">
-                    Made by Local Jewelry Co.
-                </p>
-
-                <p>
-                    Handmade jewelry created by a local artist.
-                </p>
-
-                <p class="product-price">
-                    $18.50
-                </p>
-
-                <button>View Product</button>
-
-            </div>
-
-        </div>
-
-
-        <div class="product-card">
-
-            <div class="product-card-content">
-
-                <h3>Wooden Serving Board</h3>
-
-                <p class="seller-name">
-                    Made by Coastal Woodworks
-                </p>
-
-                <p>
-                    Handmade wooden kitchenware.
-                </p>
-
-                <p class="product-price">
-                    $34.00
-                </p>
-
-                <button>View Product</button>
-
-            </div>
-
-        </div>
+        {% else %}
+        <p>No products are available yet. Check back soon!</p>
+        {% endfor %}
 
     </div>
 
