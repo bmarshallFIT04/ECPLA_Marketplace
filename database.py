@@ -220,7 +220,6 @@ def add_review(body:str, rating:int, user_id:int, product_id:int):
 def get_reviews(product_id:int):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    print(type(product_id))
     cursor.execute('''
         SELECT body, rating, user_id 
         FROM reviews 

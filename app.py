@@ -111,14 +111,26 @@ def products():
 @app.route("/product/<int:product_id>")
 def product(product_id):
     product = get_product(product_id)
-    render_reviews(product_id)
+
+    # Reviews
+    reviews = get_reviews(product_id)
+    
+
+
+
     if product is None:
         abort(404)
-    return render_template("product.html", product=product, user_id=session.get('user_id', DEFAULT_ID))
+    return render_template("product.html", reviews=reviews, product=product, user_id=session.get('user_id', DEFAULT_ID))
 
-def render_reviews(product_id):
-    reviews = get_reviews(product_id)
-    return render_template("reviews.html")
+@app.route("/reviews/", methods=["GET, POST"])
+def reviews(product_id):
+
+    if request.method == "POST":
+        if request.form.get("rating"):
+            add_review(request.form["review"], request.form["rating"], 1, 1)
+        return redirect(url_for('products'))
+    else:
+        return redirect(url_for("products"))
 
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():

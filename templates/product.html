@@ -85,7 +85,62 @@
     <h2>Reviews</h2>
 
     <p>
-        Product reviews will appear here.
+        <form action="{{ url_for('reviews', product_id=product.id) }}" method="POST">
+            <label for="rating">
+                Rating
+            </label>
+
+            <input
+                type="number"
+                id="rating"
+                name="rating"
+                value="10"
+                min="1"
+                max="10"
+            >
+
+            <label for="review">
+                Leave a review!
+            </label>
+
+            <input
+                type="text"
+                id="review"
+                name="review"
+                value=""
+            >
+
+            <button type="submit">
+                Submit Review
+            </button>
+
+            <div class="product-grid">
+
+            <!-- Products from every seller, loaded from the database -->
+            {% for review in reviews %}
+            <div class="review-card">
+
+                <div class="review-card-content">
+
+                    <h2>{{ review.title }}</h2>
+
+                    {% if review.body %}
+                    <p>{{ review.body }}</p>
+                    {% endif %}
+
+                    <p class="review-rating">${{ "%.2f"|format(review.rating) }}</p>
+                    
+
+                </div>
+
+            </div>
+            {% else %}
+            <p>No reviews for this product yet.</p>
+            {% endfor %}
+        </form>
+
+</div>
+
     </p>
 
 </section>
